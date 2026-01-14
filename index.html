@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kindly Create</title>
+    <link rel="icon" href="https://iili.io/f8yBZN9.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Changa+One:ital@0;1&family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Momo+Trust+Display&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8f9fb;
+        color: #111827;
+      }
+      /* Custom scrollbar for sidebar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #d1d5db;
+      }
+      
+      .radiant-glow {
+        background: linear-gradient(90deg, #4f46e5, #06b6d4, #10b981, #f59e0b, #ef4444, #8b5cf6);
+        background-size: 200% 200%;
+        animation: radiant 3s ease infinite;
+      }
+      
+      @keyframes radiant {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* Animation Utilities */
+      .animate-gradient-xy {
+        background-size: 200% 200%;
+        animation: gradient-xy 3s ease infinite;
+      }
+      @keyframes gradient-xy {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+
+      .animate-blob {
+        animation: blob 7s infinite;
+      }
+      @keyframes blob {
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
+      }
+      .animation-delay-2000 {
+        animation-delay: 2s;
+      }
+      .animation-delay-4000 {
+        animation-delay: 4s;
+      }
+
+      /* Squircle Utilities */
+      .squircle {
+        border-radius: 20px;
+        @supports (corner-shape: squircle) {
+          corner-shape: squircle;
+        }
+      }
+      
+      .squircle-sm {
+        border-radius: 12px;
+        @supports (corner-shape: squircle) {
+          corner-shape: squircle;
+        }
+      }
+      
+      .squircle-lg {
+        border-radius: 32px;
+        @supports (corner-shape: squircle) {
+          corner-shape: squircle;
+        }
+      }
+
+      .squircle-box {
+        border-radius: 32px;
+        @supports (corner-shape: squircle) {
+          corner-shape: squircle;
+        }
+      }
+
+      /* Sphere Animation */
+      @keyframes fluid {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+      .animate-fluid {
+        animation: fluid 8s ease-in-out infinite;
+      }
+      .sphere-gradient {
+        background-size: 300% 300%;
+        background-image: linear-gradient(
+          135deg, 
+          #fffbeb 10%, /* Cream/Yellowish White */
+          #f9a8d4 35%, /* Pink */
+          #a78bfa 60%, /* Purple */
+          #3b82f6 90%  /* Blue */
+        );
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

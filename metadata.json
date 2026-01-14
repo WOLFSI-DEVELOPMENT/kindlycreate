@@ -1,0 +1,7 @@
+{
+  "name": "Kindly Create",
+  "description": "A high-fidelity UI theme library for AI app builders, featuring copy-paste system prompts and live interactive previews.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

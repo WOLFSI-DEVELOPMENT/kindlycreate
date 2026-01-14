@@ -1,0 +1,26 @@
+
+
+export interface ComponentItem {
+  id: string;
+  title: string;
+  description: string;
+  views: number;
+  copies: number;
+  category: 'Style' | 'Animation' | 'UI Component' | 'Design System';
+  thumbnailClass: string; // CSS class for the mock thumbnail
+  systemPrompt: string;
+  readme?: string; // Optional field for generated README.md
+  code?: string; // Optional field for generated HTML code
+  createdAt?: number; // Timestamp for recent items
+  type?: 'prompt' | 'prototype' | 'image'; // Type of creation
+}
+
+export interface SidebarProps {
+  items: ComponentItem[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}
+
+export interface PreviewAreaProps {
+  item: ComponentItem;
+}
