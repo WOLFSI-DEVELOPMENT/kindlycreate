@@ -231,8 +231,6 @@ const App: React.FC = () => {
   // Determine if we should use the floating card layout
   const isFloatingLayout = ['home', 'library', 'design-systems', 'editor', 'recent'].includes(currentView);
 
-  // ... (Keep handlePromptUpdate, handleInitialSubmit, handlePlanningBuild, etc. from original code)
-  
   const handlePromptUpdate = (newPrompt: string) => {
     const baseItem = customizedItem || activeItem;
     const finalItem = { ...baseItem, systemPrompt: newPrompt };
@@ -254,7 +252,9 @@ const App: React.FC = () => {
     navigateTo('building');
     
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // Fallback to localStorage API key if process.env.API_KEY is missing/invalid in client
+        const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         const conversationText = chatHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
 
         let prompt = '';
@@ -323,8 +323,68 @@ const App: React.FC = () => {
   };
 
   const handleEditorGenerate = async (prompt: string): Promise<string | void> => {
-     // (Keep original logic, just condensed for brevity here)
-     return "Updated."; 
+    if (!generatedItem && !customizedItem) return;
+    setIsGenerating(true);
+    
+    try {
+        const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        
+        const currentItem = customizedItem || generatedItem!;
+        // Handle both Prompt and Prototype modes for editor
+        if (currentItem.type === 'prototype') {
+             const currentCode = currentItem.code || "";
+             const systemPrompt = `You are an expert UI Engineer. 
+             Modify the following code based on the user's request.
+             Return the FULL updated HTML code.
+             Do not include markdown fences.
+             
+             CURRENT CODE:
+             ${currentCode}
+             
+             USER REQUEST:
+             ${prompt}`;
+
+             const response = await ai.models.generateContent({
+                 model: 'gemini-3-flash-preview',
+                 contents: systemPrompt,
+             });
+             
+             const newCode = response.text?.replace(/```html/g, '').replace(/```/g, '').trim();
+             if (newCode) {
+                 setCustomizedItem({ ...currentItem, code: newCode });
+                 return "I've updated the prototype based on your request.";
+             }
+        } else {
+             // Prompt generation mode
+             const currentSystemPrompt = currentItem.systemPrompt || "";
+             const metaPrompt = `You are an expert Prompt Engineer.
+             Refine the following system prompt based on the user's request.
+             Return ONLY the new system prompt text.
+             
+             CURRENT PROMPT:
+             ${currentSystemPrompt}
+             
+             USER REQUEST:
+             ${prompt}`;
+             
+             const response = await ai.models.generateContent({
+                 model: 'gemini-3-flash-preview',
+                 contents: metaPrompt,
+             });
+             
+             if (response.text) {
+                 setCustomizedItem({ ...currentItem, systemPrompt: response.text });
+                 return "I've updated the system prompt.";
+             }
+        }
+        return "I couldn't complete the update.";
+    } catch (e) {
+        console.error(e);
+        return "Error generating update.";
+    } finally {
+        setIsGenerating(false);
+    }
   };
   
   const handleNavClick = (view: 'library' | 'design-systems' | 'recent') => {

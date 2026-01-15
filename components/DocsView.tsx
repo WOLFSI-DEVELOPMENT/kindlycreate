@@ -77,21 +77,23 @@ const SECTIONS: DocSection[] = [
     searchContext: "proprietary architecture llm fine-tuned orchestration layer ui ux patterns typography scales accessibility standards smart search blueprint planning context awareness",
     content: (
       <div className="space-y-6">
-        <div className="p-6 bg-gradient-to-r from-gray-900 to-black rounded-2xl text-white shadow-xl relative overflow-hidden">
+        <div className="p-6 bg-gradient-to-r from-indigo-900 to-black rounded-2xl text-white shadow-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-20">
                 <Sparkles size={100} />
             </div>
-            <h3 className="text-2xl font-bold mb-2 relative z-10">Proprietary Architecture</h3>
-            <p className="text-gray-300 relative z-10 max-w-lg">
-                Unlike generic LLMs, Kindly Intelligence is a fine-tuned orchestration layer designed specifically for UI/UX patterns. It understands spacing, typography scales, and accessibility standards.
+            <h3 className="text-2xl font-bold mb-2 relative z-10">Kindly Intelligence v1</h3>
+            <p className="text-indigo-100 relative z-10 max-w-lg">
+                Our newly released AI-powered text processing API. Global Edge deployment for low latency, enabled for all origins, and completely free.
             </p>
         </div>
         <div className="prose prose-gray">
-            <p>Kindly Intelligence powers features like:</p>
-            <ul>
-                <li><strong>Smart Search:</strong> Understanding intent behind vague queries like "make it pop" or "apple style".</li>
-                <li><strong>Blueprint Planning:</strong> Structuring complex applications into component hierarchies before writing code.</li>
-                <li><strong>Context Awareness:</strong> Remembering your selected design system across different requests.</li>
+            <p>The new intelligence engine powers the "Ask Kindly" assistant and the <strong>Image Generator</strong>, offering specialized creative support including:</p>
+            <ul className="list-disc pl-5 space-y-2">
+                <li><strong>Visual Generation:</strong> Create production-ready UI assets and mockups from text descriptions.</li>
+                <li><strong>Rewrite:</strong> Rephrase text with synonyms and improved flow.</li>
+                <li><strong>Summarize:</strong> Extract key sentences and condense information.</li>
+                <li><strong>Explain:</strong> Simplify complex words and add context.</li>
+                <li><strong>Shorten:</strong> Remove filler words and redundancy.</li>
             </ul>
         </div>
       </div>
@@ -102,31 +104,52 @@ const SECTIONS: DocSection[] = [
     title: 'API Reference',
     category: 'Developers',
     icon: <Code size={18} />,
-    searchContext: "public beta free authentication header authorization bearer token endpoints post generate component get systems list",
+    searchContext: "public beta free authentication header authorization bearer token endpoints post generate component get systems list kindly intelligence process",
     content: (
       <div className="space-y-6">
         <div className="flex items-center gap-3 p-4 bg-green-50 text-green-800 rounded-xl border border-green-100">
             <Zap size={20} />
-            <span className="font-medium">The API is currently in Public Beta and is free to use.</span>
+            <span className="font-medium">The Kindly Intelligence API is live and requires no API key.</span>
         </div>
-        <div className="space-y-4">
-            <h3 className="font-bold text-gray-900">Authentication</h3>
-            <p className="text-gray-600 text-sm">All API requests must include your API key in the header.</p>
-            <div className="bg-[#1e1e1e] p-4 rounded-xl overflow-x-auto">
-                <code className="text-blue-400 font-mono text-sm">Authorization: Bearer kc_live_...</code>
+        
+        <div className="space-y-2">
+            <h3 className="font-bold text-gray-900">Base URL</h3>
+            <div className="bg-[#1e1e1e] p-3 rounded-lg">
+                <code className="text-blue-400 font-mono text-sm">https://kindly-intelligence.vercel.app/api</code>
             </div>
         </div>
+
         <div className="space-y-4">
-            <h3 className="font-bold text-gray-900">Endpoints</h3>
-            <div className="space-y-2">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg font-mono text-sm border border-gray-200">
-                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">POST</span>
-                    <span className="text-gray-600">/v1/generate/component</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg font-mono text-sm border border-gray-200">
-                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">GET</span>
-                    <span className="text-gray-600">/v1/systems/list</span>
-                </div>
+            <h3 className="font-bold text-gray-900">Process Text</h3>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg font-mono text-sm border border-gray-200">
+                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">POST</span>
+                <span className="text-gray-600">/process</span>
+            </div>
+            
+            <p className="text-sm text-gray-600">Request Body:</p>
+            <div className="bg-[#1e1e1e] p-4 rounded-xl overflow-x-auto text-sm">
+<pre className="text-gray-300">
+{`{
+  "text": "Your text here...",
+  "mode": "rewrite" // summarize | explain | shorten
+}`}
+</pre>
+            </div>
+
+            <p className="text-sm text-gray-600">Response:</p>
+            <div className="bg-[#1e1e1e] p-4 rounded-xl overflow-x-auto text-sm">
+<pre className="text-gray-300">
+{`{
+  "success": true,
+  "data": {
+    "result": "Processed text...",
+    "stats": {
+      "compressionRatio": "50.0%",
+      "processingTimeMs": 12
+    }
+  }
+}`}
+</pre>
             </div>
         </div>
       </div>
@@ -164,26 +187,26 @@ const SECTIONS: DocSection[] = [
     title: 'Changelog',
     category: 'Developers',
     icon: <Hash size={18} />,
-    searchContext: "updates version history smart search docs gemini 3.0 integration export tools bolt lovable",
+    searchContext: "updates version history smart search docs gemini 3.0 integration export tools bolt lovable kindly intelligence api v1",
     content: (
         <div className="space-y-8">
             <div className="relative pl-6 border-l-2 border-gray-100">
                 <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-white"></div>
-                <div className="text-sm text-gray-400 mb-1">v2.1.0 • Today</div>
-                <h4 className="font-bold text-gray-900 mb-2">Smart Search & Docs</h4>
-                <p className="text-sm text-gray-600">Introduced "Ask Kindly Intelligence" smart search across the app. Added this documentation view.</p>
+                <div className="text-sm text-gray-400 mb-1">v3.0.0 • Today</div>
+                <h4 className="font-bold text-gray-900 mb-2">Kindly Intelligence v1</h4>
+                <p className="text-sm text-gray-600">Released the standalone Kindly Intelligence API. Updated Ask Kindly panel to use the new /process endpoint for faster, specialized text operations. Added Image Generation capabilities.</p>
             </div>
             <div className="relative pl-6 border-l-2 border-gray-100">
                 <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-gray-300 ring-4 ring-white"></div>
-                <div className="text-sm text-gray-400 mb-1">v2.0.0 • Last Week</div>
-                <h4 className="font-bold text-gray-900 mb-2">Gemini 3.0 Integration</h4>
-                <p className="text-sm text-gray-600">Upgraded core generation engine to Gemini 3.0 Flash for 4x faster prototypes.</p>
+                <div className="text-sm text-gray-400 mb-1">v2.1.0 • Last Week</div>
+                <h4 className="font-bold text-gray-900 mb-2">Smart Search & Docs</h4>
+                <p className="text-sm text-gray-600">Introduced "Ask Kindly Intelligence" smart search across the app.</p>
             </div>
-             <div className="relative pl-6 border-l-2 border-gray-100">
+            <div className="relative pl-6 border-l-2 border-gray-100">
                 <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-gray-300 ring-4 ring-white"></div>
-                <div className="text-sm text-gray-400 mb-1">v1.5.0 • 2 Weeks Ago</div>
-                <h4 className="font-bold text-gray-900 mb-2">Export Tools</h4>
-                <p className="text-sm text-gray-600">Added direct export links for Bolt.new, v0, and Lovable.</p>
+                <div className="text-sm text-gray-400 mb-1">v2.0.0 • 2 Weeks Ago</div>
+                <h4 className="font-bold text-gray-900 mb-2">Gemini 3.0 Integration</h4>
+                <p className="text-sm text-gray-600">Upgraded core generation engine to Gemini 3.0 Flash.</p>
             </div>
         </div>
     )
@@ -314,7 +337,7 @@ export const DocsView: React.FC<DocsViewProps> = ({ onBack }) => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-100 focus:bg-white focus:border-gray-300 hover:bg-gray-100 rounded-full py-3 pl-12 pr-12 text-sm outline-none transition-all placeholder-gray-400 shadow-sm focus:shadow-md"
-                    placeholder="Ask Kindly Intelligence..."
+                    placeholder="Search documentation..."
                  />
                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                      {isSearching ? (

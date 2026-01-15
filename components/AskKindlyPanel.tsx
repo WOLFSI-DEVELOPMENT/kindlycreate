@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, X, Sparkles, MessageSquare } from 'lucide-react';
+import { ArrowUp, X, Sparkles, MessageSquare, Zap, BarChart2, Clock } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { AnimatedSphere } from './AnimatedSphere';
 
@@ -10,10 +10,18 @@ interface AskKindlyPanelProps {
   onClose: () => void;
 }
 
+interface ProcessingStats {
+  originalLength: number;
+  resultLength: number;
+  compressionRatio: string;
+  processingTimeMs: number;
+}
+
 interface Message {
   role: 'user' | 'model';
   text: string;
   suggestion?: string; // If model offers a new prompt
+  stats?: ProcessingStats;
 }
 
 const BlingIcon = () => (
@@ -32,6 +40,37 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const processWithKindlyAPI = async (mode: string, textToProcess: string) => {
+    setIsGenerating(true);
+    setMessages(prev => [...prev, { role: 'user', text: `${mode.charAt(0).toUpperCase() + mode.slice(1)}` }]);
+
+    try {
+        const response = await fetch('https://kindly-intelligence.vercel.app/api/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textToProcess, mode: mode })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            setMessages(prev => [...prev, { 
+                role: 'model', 
+                text: mode === 'explain' ? data.data.result : "Here is the processed result.",
+                suggestion: mode !== 'explain' ? data.data.result : undefined,
+                stats: data.data.stats
+            }]);
+        } else {
+            setMessages(prev => [...prev, { role: 'model', text: "The Kindly Intelligence API encountered an error." }]);
+        }
+    } catch (error) {
+        console.error(error);
+        setMessages(prev => [...prev, { role: 'model', text: "Network error. Please try again." }]);
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!inputValue.trim() || isGenerating) return;
 
@@ -41,10 +80,10 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
     setIsGenerating(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
+      const ai = new GoogleGenAI({ apiKey: apiKey });
       const systemInstruction = `You are a helpful AI assistant for a Prompt Engineering tool. 
       Your goal is to assist the user with their "System Prompt".
-      They might ask you to explain it, critique it, answer questions about it, or rewrite it.
       
       CURRENT PROMPT:
       "${currentPrompt}"
@@ -108,7 +147,7 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
     <div className="w-full md:w-[420px] h-full flex flex-col bg-white border-r border-gray-100 relative overflow-hidden font-sans">
       
       {/* --- Visuals: Gradient Blobs --- */}
-      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-blue-50/40 via-purple-50/20 to-transparent pointer-events-none z-0"></div>
+      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-indigo-50/40 via-purple-50/20 to-transparent pointer-events-none z-0"></div>
       <div className="absolute -top-12 -left-12 w-48 h-48 bg-purple-200/30 rounded-full blur-[60px] pointer-events-none z-0"></div>
       <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200/30 rounded-full blur-[50px] pointer-events-none z-0"></div>
 
@@ -118,7 +157,10 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
              <div className="w-7 h-7 bg-black text-white rounded-full flex items-center justify-center shadow-md">
                  <BlingIcon />
              </div>
-             <span className="font-bold text-base tracking-tight text-gray-900">Ask Kindly</span>
+             <div className="flex flex-col">
+                <span className="font-bold text-base tracking-tight text-gray-900 leading-none">Kindly Intelligence</span>
+                <span className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">v1.0</span>
+             </div>
          </div>
          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100/50 transition-colors">
              <X size={18} />
@@ -128,12 +170,12 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-5 py-2 space-y-6 relative z-10 pb-20">
          {messages.length === 0 && (
-             <div className="text-center mt-20 opacity-60 px-6">
+             <div className="text-center mt-12 opacity-60 px-6">
                  <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-400">
-                    <MessageSquare size={20} />
+                    <Zap size={20} />
                  </div>
-                 <p className="text-sm font-medium text-gray-600 mb-1">How can I help?</p>
-                 <p className="text-xs text-gray-400">Ask me to explain, rewrite, or shorten the prompt.</p>
+                 <p className="text-sm font-medium text-gray-600 mb-1">Kindly Intelligence v1</p>
+                 <p className="text-xs text-gray-400">Use the modes below to process your prompt with our new high-speed API.</p>
              </div>
          )}
 
@@ -152,10 +194,32 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
                  {/* Suggestion Card */}
                  {msg.suggestion && (
                      <div className="w-full max-w-[95%] bg-gray-50 rounded-2xl p-4 flex flex-col gap-3 no-hover shadow-none border border-gray-100">
-                         <div className="text-[11px] uppercase font-bold text-gray-400 tracking-wider">Suggested Change</div>
+                         <div className="text-[11px] uppercase font-bold text-gray-400 tracking-wider flex justify-between items-center">
+                             <span>Suggested Change</span>
+                             {msg.stats && (
+                                 <span className="text-green-600 flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded">
+                                     <Zap size={8} /> {msg.stats.processingTimeMs}ms
+                                 </span>
+                             )}
+                         </div>
                          <div className="text-[12px] text-gray-800 font-mono leading-relaxed line-clamp-6 bg-white p-3 rounded-lg border border-gray-200">
                              {msg.suggestion}
                          </div>
+                         
+                         {/* Stats Footer */}
+                         {msg.stats && (
+                             <div className="flex gap-3 mt-1 pt-2 border-t border-gray-100">
+                                 <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                                     <BarChart2 size={10} />
+                                     <span>{msg.stats.compressionRatio} compression</span>
+                                 </div>
+                                 <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                                     <Clock size={10} />
+                                     <span>{msg.stats.originalLength} → {msg.stats.resultLength} chars</span>
+                                 </div>
+                             </div>
+                         )}
+
                          <div className="flex justify-end pt-1">
                              <button 
                                 onClick={() => onReplace(msg.suggestion!)}
@@ -173,7 +237,7 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
          {isGenerating && (
              <div className="flex items-center gap-3 pl-1 mt-2">
                  <AnimatedSphere className="w-5 h-5" />
-                 <span className="text-xs font-medium text-gray-400 animate-pulse">Thinking...</span>
+                 <span className="text-xs font-medium text-gray-400 animate-pulse">Processing...</span>
              </div>
          )}
          <div ref={messagesEndRef} />
@@ -181,6 +245,21 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
 
       {/* Input Area */}
       <div className="p-5 bg-gradient-to-t from-white via-white to-white/0 relative z-20">
+          
+          {/* Quick Action Modes */}
+          <div className="flex items-center gap-2 mb-3 pl-1 overflow-x-auto no-scrollbar">
+             {['Rewrite', 'Summarize', 'Explain', 'Shorten'].map((mode) => (
+                 <button 
+                    key={mode} 
+                    onClick={() => processWithKindlyAPI(mode.toLowerCase(), currentPrompt)}
+                    className="px-4 py-1.5 bg-gray-100 text-gray-600 text-[11px] font-bold rounded-full cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+                 >
+                    {mode === 'Rewrite' && <Sparkles size={10} />}
+                    {mode}
+                 </button>
+             ))}
+          </div>
+
           <div className="relative group">
               <div className="absolute left-1.5 top-1.5 bottom-1.5 w-9 flex items-center justify-center">
                  <img src="https://iili.io/f8yBZN9.png" alt="Logo" className="w-5 h-5 object-contain opacity-40 grayscale group-focus-within:grayscale-0 group-focus-within:opacity-100 transition-all duration-300" />
@@ -190,7 +269,7 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask to refine prompt..."
+                placeholder="Or ask to refine manually..."
                 className="w-full pl-12 pr-12 py-3.5 bg-gray-100 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-gray-200 rounded-full text-sm outline-none transition-all shadow-sm focus:shadow-md font-medium placeholder-gray-400"
               />
               <button 
@@ -200,19 +279,6 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
               >
                   <ArrowUp size={16} strokeWidth={2.5} />
               </button>
-          </div>
-          
-          {/* Future Action Buttons */}
-          <div className="flex items-center gap-2 mt-3 pl-1 overflow-x-auto no-scrollbar">
-             {['Explain', 'Shorten', 'Add Detail', 'Fix Grammar'].map((label) => (
-                 <button 
-                    key={label} 
-                    onClick={() => setInputValue(label)}
-                    className="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-800 text-[11px] font-semibold rounded-full border border-gray-100 transition-colors cursor-pointer whitespace-nowrap"
-                 >
-                    {label}
-                 </button>
-             ))}
           </div>
       </div>
 

@@ -171,7 +171,8 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
   const generateTextResponse = async (prompt: string, history: Message[] = []) => {
       setIsTyping(true);
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         const contents = history.concat({ role: 'user', text: prompt }).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
         
         const res = await ai.models.generateContent({

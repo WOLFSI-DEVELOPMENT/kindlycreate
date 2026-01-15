@@ -51,12 +51,6 @@ const CursorIcon = () => (
     </svg>
 );
 
-const GrokIcon = () => (
-    <svg viewBox="0 0 512 492" width="16" height="16" fill="none" className="text-black">
-        <path fillRule="evenodd" clipRule="evenodd" d="M197.76 315.52l170.197-125.803c8.342-6.186 20.267-3.776 24.256 5.803 20.907 50.539 11.563 111.253-30.08 152.939-41.621 41.685-99.562 50.816-152.512 29.994l-57.834 26.816c82.965 56.768 183.701 42.731 246.656-20.33 49.941-50.006 65.408-118.166 50.944-179.627l.128.149c-20.971-90.282 5.162-126.378 58.666-200.17 1.28-1.75 2.56-3.499 3.819-5.291l-70.421 70.507v-.214l-243.883 245.27m-35.072 30.528c-59.563-56.96-49.28-145.088 1.515-195.926 37.568-37.61 99.136-52.97 152.874-30.4l57.707-26.666a166.554 166.554 0 00-39.019-21.334 191.467 191.467 0 00-208.042 41.942c-54.038 54.101-71.04 137.301-41.856 208.298 21.802 53.056-13.931 90.582-49.92 128.47C23.104 463.915 10.304 477.333 0 491.541l162.56-145.386" fill="currentColor"/>
-    </svg>
-);
-
 const BoltIcon = () => (
     <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor" className="text-orange-500">
         <path d="M505.998 130.999v250c0 69-56 124.999-125 124.999h-250C62 505.998 6 449.998 6 380.998v-250C6 62 62 6 131 6h250c69 0 124.999 56 124.999 125z" fill="currentColor" fillOpacity="0.1" />
@@ -94,6 +88,13 @@ const AIStudioIcon = () => (
         <defs>
             <clipPath id="aistudio_clip0"><path fill="#fff" d="M0 0h512v512H0z"/></clipPath>
         </defs>
+    </svg>
+);
+
+const GrokIcon = () => (
+    <svg viewBox="0 0 512 509.641" width="16" height="16" fill="currentColor">
+       <path d="M115.612 0h280.776C459.975 0 512 52.026 512 115.612v278.416c0 63.587-52.025 115.613-115.612 115.613H115.612C52.026 509.641 0 457.615 0 394.028V115.612C0 52.026 52.026 0 115.612 0z"/>
+       <path fill="#fff" d="M213.235 306.019l178.976-180.002v.169l51.695-51.763c-.924 1.32-1.86 2.605-2.785 3.89-39.281 54.164-58.46 80.649-43.07 146.922l-.09-.101c10.61 45.11-.744 95.137-37.398 131.836-46.216 46.306-120.167 56.611-181.063 14.928l42.462-19.675c38.863 15.278 81.392 8.57 111.947-22.03 30.566-30.6 37.432-75.159 22.065-112.252-2.92-7.025-11.67-8.795-17.792-4.263l-124.947 92.341zm-25.786 22.437l-.033.034L68.094 435.217c7.565-10.429 16.957-20.294 26.327-30.149 26.428-27.803 52.653-55.359 36.654-94.302-21.422-52.112-8.952-113.177 30.724-152.898 41.243-41.254 101.98-51.661 152.706-30.758 11.23 4.172 21.016 10.114 28.638 15.639l-42.359 19.584c-39.44-16.563-84.629-5.299-112.207 22.313-37.298 37.308-44.84 102.003-1.128 143.81z"/>
     </svg>
 );
 
@@ -368,6 +369,12 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
                         </button>
                         <button onClick={() => openUrl('https://lovable.dev/?autosubmit=true#prompt={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
                             <LovableIcon /> Lovable
+                        </button>
+                        <button onClick={() => openUrl('https://aistudio.google.com/apps?autosubmit=true&prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                            <AIStudioIcon /> Google AI Studio
+                        </button>
+                        <button onClick={() => openUrl('https://grok.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                            <GrokIcon /> Grok
                         </button>
                         <div className="h-px bg-gray-100 my-1"></div>
                         <button onClick={() => { handleCopy(); setDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
