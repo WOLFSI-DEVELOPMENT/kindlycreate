@@ -12,9 +12,10 @@ import { TermsView } from './components/TermsView';
 import { DocsView } from './components/DocsView';
 import { SettingsView } from './components/SettingsView';
 import { AskKindlyPanel } from './components/AskKindlyPanel';
+import { CopilotView } from './components/CopilotView';
 import { COMPONENT_ITEMS, DESIGN_SYSTEMS } from './constants';
 import { ComponentItem, User } from './types';
-import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2, Sparkles, Home } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -24,10 +25,10 @@ declare global {
 
 // --- CUSTOM ICONS ---
 
-const CreateIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
-    <path d="M0.5 12A11.5 11.5 0 1 0 12 0.5 11.51 11.51 0 0 0 0.5 12Zm5 -0.5a1 1 0 0 1 1 -1h3.75a0.25 0.25 0 0 0 0.25 -0.25V6.5a1 1 0 0 1 1 -1h1a1 1 0 0 1 1 1v3.75a0.25 0.25 0 0 0 0.25 0.25h3.75a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-3.75a0.25 0.25 0 0 0 -0.25 0.25v3.75a1 1 0 0 1 -1 1h-1a1 1 0 0 1 -1 -1v-3.75a0.25 0.25 0 0 0 -0.25 -0.25H6.5a1 1 0 0 1 -1 -1Z" fill="currentColor" strokeWidth="1"></path>
-  </svg>
+const ExpandIcon = () => (
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+  <path d="M12 22 6 16l1.1 -1.1 4.9 4.9 4.9 -4.9L18 16 12 22Zm-4.9 -12.9L6 8 12 2l6 6 -1.1 1.1L12 4.2l-4.9 4.9Z" fill="currentColor" strokeWidth="0.5"></path>
+</svg>
 );
 
 const RecentIcon = () => (
@@ -54,14 +55,14 @@ const DesignSystemIcon = () => (
   </svg>
 );
 
-type ViewState = 'home' | 'planning' | 'building' | 'editor' | 'library' | 'design-systems' | 'recent' | 'privacy' | 'terms' | 'docs' | 'settings';
+type ViewState = 'home' | 'planning' | 'building' | 'editor' | 'library' | 'design-systems' | 'recent' | 'privacy' | 'terms' | 'docs' | 'settings' | 'copilot';
 
 // --- MAGIC PROMPT HELPER (Powered by Kindly Intelligence) ---
 const generateMagicPrompt = async (prompt: string) => {
     try {
         const encoded = encodeURIComponent(prompt);
         // Using GET as per standard Pollinations usage to avoid 405 Method Not Allowed
-        const response = await fetch(`https://text.pollinations.ai/${encoded}`);
+        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=openai`);
         if (!response.ok) throw new Error('Magic Prompt generation failed');
         return await response.text();
     } catch (error) {
@@ -78,9 +79,22 @@ const App: React.FC = () => {
   const [initialPrompt, setInitialPrompt] = useState('');
   const [creationMode, setCreationMode] = useState<'prompt' | 'prototype' | 'image'>('prompt');
   const [generatedItem, setGeneratedItem] = useState<ComponentItem | null>(null);
-  const [recentItems, setRecentItems] = useState<ComponentItem[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const generationRef = useRef(0);
+
+  // Initialize recentItems from LocalStorage
+  const [recentItems, setRecentItems] = useState<ComponentItem[]>(() => {
+      if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('kindly_recent_items');
+          try {
+              return saved ? JSON.parse(saved) : [];
+          } catch (e) {
+              console.error("Failed to parse recent items", e);
+              return [];
+          }
+      }
+      return [];
+  });
 
   // Ask Kindly State
   const [isAskKindlyActive, setIsAskKindlyActive] = useState(false);
@@ -93,6 +107,15 @@ const App: React.FC = () => {
   const [loginState, setLoginState] = useState<'idle' | 'success'>('idle');
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Create Dropdown State
+  const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
+  const createDropdownRef = useRef<HTMLDivElement>(null);
+
+  // --- PERSISTENCE LOGIC ---
+  useEffect(() => {
+      localStorage.setItem('kindly_recent_items', JSON.stringify(recentItems));
+  }, [recentItems]);
+
   // --- ROUTING LOGIC ---
   useEffect(() => {
     // 1. Handle Initial Load
@@ -104,6 +127,7 @@ const App: React.FC = () => {
     else if (path === '/privacy') setCurrentView('privacy');
     else if (path === '/terms') setCurrentView('terms');
     else if (path === '/recent') setCurrentView('recent');
+    else if (path === '/copilot') setCurrentView('copilot');
     else setCurrentView('home');
 
     // 2. Handle Browser Back Button
@@ -116,6 +140,7 @@ const App: React.FC = () => {
         else if (p === '/privacy') setCurrentView('privacy');
         else if (p === '/terms') setCurrentView('terms');
         else if (p === '/recent') setCurrentView('recent');
+        else if (p === '/copilot') setCurrentView('copilot');
         else setCurrentView('home');
     };
     window.addEventListener('popstate', onPopState);
@@ -124,6 +149,9 @@ const App: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
         if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
             setShowUserMenu(false);
+        }
+        if (createDropdownRef.current && !createDropdownRef.current.contains(event.target as Node)) {
+            setCreateDropdownOpen(false);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -142,6 +170,7 @@ const App: React.FC = () => {
       // Reset contextual states
       setIsAskKindlyActive(false);
       setCustomizedItem(null);
+      setCreateDropdownOpen(false);
   };
 
   // --- AUTH LOGIC ---
@@ -243,7 +272,7 @@ const App: React.FC = () => {
       : (COMPONENT_ITEMS.find(item => item.id === selectedId) || COMPONENT_ITEMS[0])));
 
   // Determine if we should use the floating card layout
-  const isFloatingLayout = ['home', 'library', 'design-systems', 'editor', 'recent'].includes(currentView);
+  const isFloatingLayout = ['home', 'library', 'design-systems', 'editor', 'recent', 'copilot'].includes(currentView);
 
   const handlePromptUpdate = (newPrompt: string) => {
     const baseItem = customizedItem || activeItem;
@@ -252,6 +281,8 @@ const App: React.FC = () => {
     if (generatedItem && generatedItem.id === baseItem.id) {
         setGeneratedItem(finalItem);
     }
+    // Persist update to recent items
+    setRecentItems(prev => prev.map(item => item.id === finalItem.id ? finalItem : item));
   };
 
   const handleInitialSubmit = (prompt: string, mode: 'prompt' | 'prototype' | 'image') => {
@@ -262,6 +293,34 @@ const App: React.FC = () => {
 
   const handlePlanningBuild = async (chatHistory: any[]) => {
     const genId = ++generationRef.current;
+    
+    // IMAGE MODE: Directly save without hitting magic prompt again
+    if (creationMode === 'image') {
+        const lastImageMsg = chatHistory.slice().reverse().find((m: any) => m.image);
+        if (lastImageMsg) {
+             const newItem: ComponentItem = {
+                 id: `img-${Date.now()}`,
+                 title: `Generated Image ${new Date().toLocaleTimeString()}`,
+                 description: initialPrompt,
+                 category: 'UI Component', // Using existing category literal
+                 type: 'image',
+                 thumbnailClass: 'bg-gray-100',
+                 systemPrompt: initialPrompt,
+                 // Storing as HTML for preview compatibility
+                 code: `<img src="${lastImageMsg.image}" alt="Generated" class="w-full h-full object-contain" />`, 
+                 createdAt: Date.now(),
+                 views: 0, 
+                 copies: 0
+             };
+             setGeneratedItem(newItem);
+             setRecentItems(prev => [newItem, ...prev]);
+             // For images, skip the building animation
+             navigateTo('editor');
+             return;
+        }
+    }
+
+    // TEXT/PROTOTYPE MODE
     setIsGenerating(true);
     navigateTo('building');
     
@@ -375,7 +434,10 @@ const App: React.FC = () => {
              const cleanCode = newCode?.replace(/```html/g, '').replace(/```/g, '').trim();
              
              if (cleanCode) {
-                 setCustomizedItem({ ...currentItem, code: cleanCode });
+                 const updatedItem = { ...currentItem, code: cleanCode };
+                 setCustomizedItem(updatedItem);
+                 // Persist refinement to local storage via recentItems update
+                 setRecentItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
                  return "I've updated the prototype based on your request.";
              }
         } else {
@@ -394,7 +456,10 @@ const App: React.FC = () => {
              const text = await generateMagicPrompt(metaPrompt);
              
              if (text) {
-                 setCustomizedItem({ ...currentItem, systemPrompt: text });
+                 const updatedItem = { ...currentItem, systemPrompt: text };
+                 setCustomizedItem(updatedItem);
+                 // Persist refinement to local storage via recentItems update
+                 setRecentItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
                  return "I've updated the system prompt.";
              }
         }
@@ -447,17 +512,33 @@ const App: React.FC = () => {
 
               <div className="w-px h-5 bg-gray-200 mx-2"></div>
 
-              <button 
-                onClick={() => { setInitialPrompt(''); setGeneratedItem(null); navigateTo('home'); }}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold shadow-sm border transition-all duration-200 ${
-                    ['home', 'planning', 'editor'].includes(currentView)
-                    ? 'bg-black text-white border-black hover:bg-gray-800' 
-                    : 'bg-white text-gray-900 border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className={['home', 'planning', 'editor'].includes(currentView) ? "text-white" : "text-gray-900"}><CreateIcon /></div>
-                <span>Create</span>
-              </button>
+              {/* Create / Expand Dropdown */}
+              <div className="relative" ref={createDropdownRef}>
+                  <button 
+                    onClick={() => setCreateDropdownOpen(!createDropdownOpen)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold shadow-sm border transition-all duration-200 ${
+                        createDropdownOpen
+                        ? 'bg-gray-100 text-gray-900 border-gray-300'
+                        : ['home', 'planning', 'editor', 'copilot'].includes(currentView)
+                            ? 'bg-black text-white border-black hover:bg-gray-800' 
+                            : 'bg-white text-gray-900 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={createDropdownOpen ? "text-gray-900" : (['home', 'planning', 'editor', 'copilot'].includes(currentView) ? "text-white" : "text-gray-900")}><ExpandIcon /></div>
+                    <span>Create</span>
+                  </button>
+
+                  {createDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 p-1.5 overflow-hidden animate-fade-in-up">
+                          <button onClick={() => navigateTo('home')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3 transition-colors">
+                              <Home size={16} /> Kindly Create
+                          </button>
+                          <button onClick={() => navigateTo('copilot')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3 transition-colors">
+                              <Sparkles size={16} className="text-blue-500" /> Kindly Copilot
+                          </button>
+                      </div>
+                  )}
+              </div>
 
               {/* Login / User Section */}
               {!user ? (
@@ -593,6 +674,10 @@ const App: React.FC = () => {
                         isAskKindlyActive={isAskKindlyActive}
                     />
                  </div>
+             )}
+
+             {currentView === 'copilot' && (
+                 <CopilotView userName={user ? user.name.split(' ')[0] : 'Creator'} />
              )}
 
              {currentView === 'recent' && (

@@ -101,6 +101,7 @@ const GrokIcon = () => (
 const SyntaxHighlighter = ({ code }: { code: string }) => {
     // A simple tokenizer to colorize HTML/Tailwind
     const highlightedCode = useMemo(() => {
+        if (!code) return null;
         const tokens = code.split(/([<>=" \n])/g);
         
         return tokens.map((token, index) => {
@@ -123,7 +124,7 @@ const SyntaxHighlighter = ({ code }: { code: string }) => {
         });
     }, [code]);
 
-    const lines = code.split('\n');
+    const lines = code ? code.split('\n') : [];
 
     return (
         <div className="flex font-mono text-xs md:text-sm bg-[#1e1e1e] text-[#d4d4d4] h-full overflow-hidden">
@@ -152,20 +153,20 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'prompt' | 'readme'>('preview');
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
 
-  // If item changes and has no code, force prompt view (or readme if prompted)
+  // Determine if we should show visual tabs (Preview/Code) or just text tabs (Prompt/Readme)
+  // We want to show Preview/Code for Prototypes, UI Components, and Design Systems, or anything that HAS code.
+  const showVisualTabs = item.type === 'prototype' || item.category === 'UI Component' || item.category === 'Design System' || !!item.code;
+
+  // Effect to set initial active tab
   useEffect(() => {
-    // If it's a design system, we now have code, so we default to preview
-    if (item.category === 'Design System') {
+    if (showVisualTabs) {
+        // Prefer preview if available
         setActiveTab('preview');
-        return;
-    }
-    
-    if (!item.code && item.systemPrompt) {
+    } else {
+        // Default to prompt if no visual component
         setActiveTab('prompt');
-    } else if (item.code) {
-        setActiveTab('preview');
     }
-  }, [item]);
+  }, [item.id, showVisualTabs]); // Reset when item ID changes
 
   const handleCopy = () => {
     let textToCopy = '';
@@ -218,6 +219,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   };
 
   const renderComponent = () => {
+    // Hardcoded components
     switch (item.id) {
       case 'radiant-input': return <RadiantPreview />;
       case 'pricing-section': return <PricingSection />;
@@ -227,6 +229,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
       case 'clickup-calc': return <ClickUpCalculator />;
     }
 
+    // Generated Code Preview
     if (item.code) {
         // Detect if the code is a full HTML document (typical for Design Systems)
         const isFullHtml = item.code.trim().startsWith('<!DOCTYPE html>') || item.code.trim().startsWith('<html');
@@ -246,11 +249,18 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
        );
     }
     
+    // Fallback if type is prototype but code is missing/generating
+    if (item.type === 'prototype') {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+                <Sparkles className="w-8 h-8 animate-pulse text-indigo-300" />
+                <p>Generating preview...</p>
+            </div>
+        );
+    }
+    
     return <div className="p-10 text-center text-gray-400">Preview not available</div>;
   };
-
-  // If no code, hide tabs and show clean prompt view header
-  const isPromptOnly = !item.code;
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white md:bg-gray-50/50 overflow-hidden relative">
@@ -259,7 +269,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-1.5 bg-white rounded-full shadow-lg border border-gray-200">
           
           {/* Device Toggles */}
-          {!isPromptOnly && (
+          {showVisualTabs && (
               <div className="flex bg-gray-100 rounded-full p-1">
                   <button 
                     onClick={() => setDeviceMode('desktop')}
@@ -278,11 +288,11 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
               </div>
           )}
 
-          {!isPromptOnly && <div className="w-px h-4 bg-gray-200 mx-1"></div>}
+          {showVisualTabs && <div className="w-px h-4 bg-gray-200 mx-1"></div>}
 
           {/* View Modes */}
           <div className="flex items-center gap-1">
-             {!isPromptOnly && (
+             {showVisualTabs && (
                 <>
                     <button 
                         onClick={() => setActiveTab('preview')} 
@@ -390,14 +400,14 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
       {/* Content */}
       <div className={`flex-1 overflow-auto relative bg-white transition-all duration-300 ${deviceMode === 'mobile' && activeTab === 'preview' ? 'flex justify-center items-center bg-gray-100' : ''}`}>
         
-        {activeTab === 'preview' && !isPromptOnly && (
+        {activeTab === 'preview' && showVisualTabs && (
            <div className={`transition-all duration-300 ${deviceMode === 'mobile' ? 'w-[375px] h-[667px] rounded-3xl overflow-hidden border-8 border-gray-900 shadow-2xl bg-white' : 'w-full h-full bg-white'}`}>
                {renderComponent()}
            </div>
         )}
         
-        {activeTab === 'code' && !isPromptOnly && (
-            <SyntaxHighlighter code={item.code || ''} />
+        {activeTab === 'code' && showVisualTabs && (
+            <SyntaxHighlighter code={item.code || '// No code generated yet'} />
         )}
 
         {/* Prompt View */}

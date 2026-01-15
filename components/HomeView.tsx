@@ -285,10 +285,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
       <div className="fixed bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-[100]"></div>
 
       {/* --- HERO SECTION --- */}
-      <div className="flex flex-col items-center justify-center min-h-[85vh] relative pt-10 overflow-hidden">
+      <div className="flex flex-col items-center justify-center min-h-[85vh] relative pt-10">
           
-          {/* Hero Background Image */}
-          <div className="absolute inset-0 z-0">
+          {/* Hero Background Image - Modified for specific curved bottom edge only */}
+          <div className="absolute inset-x-0 top-0 bottom-0 z-0 overflow-hidden pointer-events-none rounded-b-[40px]">
               <img 
                   src="https://iili.io/fS3NdIs.md.jpg" 
                   alt="Hero Background" 
@@ -314,7 +314,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
             </div>
             
             {/* Input Container (Modified structure for connected footer) */}
-            <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm border border-gray-200 squircle-box shadow-[0_8px_40px_-10px_rgba(0,0,0,0.1)] flex flex-col relative group focus-within:ring-2 focus-within:ring-blue-100 transition-all z-20 overflow-hidden">
+            <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm border border-gray-200 squircle-box shadow-[0_8px_40px_-10px_rgba(0,0,0,0.1)] flex flex-col relative group focus-within:ring-2 focus-within:ring-blue-100 transition-all z-20">
                 
                 {/* Main Input Area */}
                 <div className="p-4 flex flex-col min-h-[120px]">
@@ -480,7 +480,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                 </div>
 
                 {/* Connected Export Tools Bar */}
-                <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 flex items-center justify-between backdrop-blur-md">
+                <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 flex items-center justify-between backdrop-blur-md rounded-b-[20px]">
                    <span className="text-xs font-semibold text-gray-500">Export prompts to</span>
                    <div className="flex items-center gap-4 text-gray-400">
                       <div className="hover:text-gray-900 transition-colors cursor-pointer" title="ChatGPT" onClick={() => handleExport('https://chatgpt.com/?q={YOUR_PROMPT_HERE}')}><ChatGPTIcon /></div>
@@ -494,18 +494,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                 </div>
             </div>
             
-            {/* Footer / Hints */}
-            <div className="mt-8 flex gap-4 text-xs text-gray-500 font-medium tracking-wide relative z-10">
-                <div className="flex items-center gap-1.5">
-                    <Sparkles size={12} />
-                    <span>Gemini 3.0 Flash</span>
-                </div>
-                <div>•</div>
-                <div>Supports Tailwind</div>
-                <div>•</div>
-                <div>Vanilla JS</div>
-            </div>
-
           </div>
       </div>
 

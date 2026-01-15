@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Paperclip, ArrowUp, ChevronDown, Check, Sparkles, Layout, Type as TypeIcon } from 'lucide-react';
+import { Paperclip, ArrowUp, ChevronDown, Check, Sparkles, Layout, Type as TypeIcon, Save } from 'lucide-react';
 import { AnimatedSphere } from './AnimatedSphere';
 
 interface Message {
@@ -18,13 +18,12 @@ interface PlanningViewProps {
 const SYSTEM_INSTRUCTION = `You are a professional UI/UX Architect.
 Your goal is to prepare a detailed plan for a UI component.
 
-Phase 1: Discovery. 
-- Ask ONLY 1-3 short, clarifying questions to understand the user's requirements.
-- If the user's initial prompt is detailed enough, skip questions.
-- Use **bold** for key concepts or questions to make them stand out.
+INSTRUCTIONS:
+1. Analyze the conversation history.
+2. IF the user has just provided answers to your previous questions, OR if the initial request is detailed enough, YOU MUST IMMEDIATELY PROCEED TO PHASE 2 (Blueprint). DO NOT ASK MORE QUESTIONS.
+3. IF the user's request is vague and you haven't asked clarifying questions yet, ask ONLY 1-3 short questions (Phase 1).
 
-Phase 2: Blueprint.
-- Once you have enough information, generate a "Project Blueprint".
+Phase 2: Blueprint Format.
 - You MUST output the blueprint as a JSON block wrapped in a specific code fence: \`\`\`json:blueprint ... \`\`\`.
 - The JSON object must follow this structure:
 {
@@ -176,7 +175,7 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
         const fullPrompt = `${SYSTEM_INSTRUCTION}\n\nCONVERSATION HISTORY:\n${conversation}\n\nAI ASSISTANT RESPONSE:`;
 
         const encoded = encodeURIComponent(fullPrompt);
-        const response = await fetch(`https://text.pollinations.ai/${encoded}`);
+        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=openai`);
 
         if (!response.ok) throw new Error("Magic Prompt API failed");
         const text = await response.text();
@@ -213,6 +212,12 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
                 <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm max-w-sm">
                     <img src={msg.image} alt="Generated result" className="w-full h-auto object-cover" />
                 </div>
+                <button
+                    onClick={() => onBuild(messages)} 
+                    className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                >
+                    <Save size={16} /> Save to Library
+                </button>
             </div>
         );
     }
