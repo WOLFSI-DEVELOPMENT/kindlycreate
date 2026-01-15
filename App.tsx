@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { Sidebar } from './components/Sidebar';
 import { PreviewArea } from './components/PreviewArea';
 import { HomeView } from './components/HomeView';
 import { PlanningView } from './components/PlanningView';
 import { ChatPanel } from './components/ChatPanel';
 import { BuildingView } from './components/BuildingView';
-import { RecentView } from './components/RecentView';
+import { GalleryView } from './components/RecentView'; // Renamed export in file
 import { PrivacyView } from './components/PrivacyView';
 import { TermsView } from './components/TermsView';
 import { DocsView } from './components/DocsView';
@@ -15,7 +16,7 @@ import { AskKindlyPanel } from './components/AskKindlyPanel';
 import { CopilotView } from './components/CopilotView';
 import { COMPONENT_ITEMS, DESIGN_SYSTEMS } from './constants';
 import { ComponentItem, User } from './types';
-import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2, Sparkles, Home, Clock, Menu } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2, Sparkles, Home, Clock, Menu, Grid, LayoutGrid } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -29,12 +30,6 @@ const ExpandIcon = () => (
 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
   <path d="M12 22 6 16l1.1 -1.1 4.9 4.9 4.9 -4.9L18 16 12 22Zm-4.9 -12.9L6 8 12 2l6 6 -1.1 1.1L12 4.2l-4.9 4.9Z" fill="currentColor" strokeWidth="0.5"></path>
 </svg>
-);
-
-const RecentIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-    <path d="M8 0.15999999999999998C5.9901333333333335 0.16573333333333332 4.0592 0.9431333333333334 2.6060666666666665 2.3316666666666666V0.944c0 -0.20793333333333333 -0.08259999999999999 -0.4073333333333333 -0.22959999999999997 -0.5544C2.2294 0.24259999999999998 2.03 0.15999999999999998 1.8220666666666665 0.15999999999999998s-0.4073333333333333 0.08259999999999999 -0.5543333333333333 0.22959999999999997c-0.14706666666666665 0.14706666666666665 -0.22966666666666663 0.3464666666666667 -0.22966666666666663 0.5544v3.5279999999999996c0 0.20793333333333333 0.08259999999999999 0.4073333333333333 0.22966666666666663 0.5544 0.147 0.147 0.34639999999999993 0.22959999999999997 0.5543333333333333 0.22959999999999997h3.5279999999999996c0.20793333333333333 0 0.4073333333333333 -0.08259999999999999 0.5544 -0.22959999999999997 0.147 -0.14706666666666665 -0.22959999999999997 -0.3464666666666667 0.22959999999999997 -0.5544s-0.08259999999999999 -0.4073333333333333 -0.22959999999999997 -0.5544c-0.14706666666666665 -0.147 -0.3464666666666667 -0.22959999999999997 -0.5544 -0.22959999999999997H3.4684666666666666c1.0080666666666667 -1.0534 2.3516 -1.7227333333333332 3.799666666666666 -1.8928666666666667 1.4481333333333333 -0.17006666666666664 2.9102 0.1696 4.134933333333333 0.9607333333333333 1.2247333333333332 0.7910666666666667 2.135533333333333 1.9842 2.5759333333333334 3.3741333333333334 0.44039999999999996 1.3899333333333335 0.38273333333333337 2.889866666666667 -0.16299999999999998 4.241866666666667s-1.5453999999999999 2.471733333333333 -2.8272666666666666 3.1665333333333328c-1.2818 0.6948 -2.7656666666666667 0.9212666666666666 -4.1964 0.6405333333333333 -1.4307999999999998 -0.2808 -2.719 -1.0512 -3.6432666666666664 -2.1788C2.2248666666666663 10.872399999999999 1.7223333333333333 9.457999999999998 1.728 8c0 -0.20793333333333333 -0.08259999999999999 -0.4074 -0.22959999999999997 -0.5544 -0.14706666666666665 -0.147 -0.3464666666666667 -0.22959999999999997 -0.5544 -0.22959999999999997s-0.4073333333333333 0.08259999999999999 -0.5544 0.22959999999999997C0.24259999999999998 7.592599999999999 0.15999999999999998 7.792066666666667 0.15999999999999998 8c0 1.5505999999999998 0.4598 3.0664 1.3212666666666666 4.355666666666666 0.8614666666666666 1.2892666666666666 2.085933333333333 2.294133333333333 3.518466666666667 2.887533333333333 1.4325999999999999 0.5933999999999999 3.0089333333333332 0.7486666666666666 4.529733333333333 0.4462 1.5208 -0.3026 2.917733333333333 -1.0492666666666666 4.014266666666666 -2.1456666666666666 1.0964 -1.0965333333333334 1.8431333333333333 -2.4934666666666665 2.1456666666666666 -4.014266666666666 0.30246666666666666 -1.5208 0.1472 -3.097133333333333 -0.4462 -4.529733333333333 -0.5933999999999999 -1.4325333333333332 -1.5982666666666667 -2.657 -2.887533333333333 -3.518466666666667C11.066399999999998 0.6197999999999999 9.5506 0.15999999999999998 8 0.15999999999999998Zm0 4.704c-0.20793333333333333 0 -0.4074 0.08259999999999999 -0.5544 0.22959999999999997 -0.147 0.14706666666666665 -0.22959999999999997 0.3464666666666667 -0.22959999999999997 0.5544V8c0 0.20793333333333333 0.08259999999999999 0.4073333333333333 0.22959999999999997 0.5543333333333333s0.3464666666666667 0.22966666666666663 0.5544 0.22966666666666663h1.5679999999999998c0.20793333333333333 0 0.4073333333333333 -0.08266666666666667 0.5543333333333333 -0.22966666666666663s0.22966666666666663 -0.34639999999999993 0.22966666666666663 -0.5543333333333333c0 -0.20793333333333333 -0.08266666666666667 -0.4074 -0.22966666666666663 -0.5544s-0.34639999999999993 -0.22959999999999997 -0.5543333333333333 -0.22959999999999997h-0.7839999999999999V5.648c0 -0.20793333333333333 -0.08266666666666667 -0.4073333333333333 -0.22966666666666663 -0.5544 -0.147 -0.147 -0.34639999999999993 -0.22959999999999997 -0.5543333333333333 -0.22959999999999997Z" fill="currentColor" strokeWidth="0.6667"></path>
-  </svg>
 );
 
 const LibraryIcon = () => (
@@ -55,18 +50,21 @@ const DesignSystemIcon = () => (
   </svg>
 );
 
-type ViewState = 'home' | 'planning' | 'building' | 'editor' | 'library' | 'design-systems' | 'recent' | 'privacy' | 'terms' | 'docs' | 'settings' | 'copilot';
+type ViewState = 'home' | 'planning' | 'building' | 'editor' | 'library' | 'design-systems' | 'gallery' | 'privacy' | 'terms' | 'docs' | 'settings' | 'copilot';
 
-// --- MAGIC PROMPT HELPER (Powered by Kindly Intelligence) ---
+// --- GOOGLE GENAI CONFIG ---
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// --- MAGIC PROMPT HELPER (Powered by Gemini 3.0 Flash) ---
 const generateMagicPrompt = async (prompt: string) => {
     try {
-        const encoded = encodeURIComponent(prompt);
-        // Using GET as per standard Pollinations usage to avoid 405 Method Not Allowed
-        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
-        if (!response.ok) throw new Error('Magic Prompt generation failed');
-        return await response.text();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+        });
+        return response.text;
     } catch (error) {
-        console.error("Magic Prompt Error:", error);
+        console.error("Gemini Generation Error:", error);
         return null;
     }
 };
@@ -94,14 +92,19 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Initialize recentItems from LocalStorage
-  const [recentItems, setRecentItems] = useState<ComponentItem[]>(() => {
+  // Initialize galleryItems from LocalStorage (Previously recentItems)
+  const [galleryItems, setGalleryItems] = useState<ComponentItem[]>(() => {
       if (typeof window !== 'undefined') {
-          const saved = localStorage.getItem('kindly_recent_items');
+          const saved = localStorage.getItem('kindly_gallery_items');
+          // Fallback to old key if new one doesn't exist
+          const oldSaved = localStorage.getItem('kindly_recent_items');
+          
           try {
-              return saved ? JSON.parse(saved) : [];
+              if (saved) return JSON.parse(saved);
+              if (oldSaved) return JSON.parse(oldSaved);
+              return [];
           } catch (e) {
-              console.error("Failed to parse recent items", e);
+              console.error("Failed to parse gallery items", e);
               return [];
           }
       }
@@ -125,8 +128,8 @@ const App: React.FC = () => {
 
   // --- PERSISTENCE LOGIC ---
   useEffect(() => {
-      localStorage.setItem('kindly_recent_items', JSON.stringify(recentItems));
-  }, [recentItems]);
+      localStorage.setItem('kindly_gallery_items', JSON.stringify(galleryItems));
+  }, [galleryItems]);
 
   // --- ROUTING LOGIC ---
   useEffect(() => {
@@ -138,7 +141,7 @@ const App: React.FC = () => {
     else if (path === '/design-systems') setCurrentView('design-systems');
     else if (path === '/privacy') setCurrentView('privacy');
     else if (path === '/terms') setCurrentView('terms');
-    else if (path === '/recent') setCurrentView('recent');
+    else if (path === '/gallery') setCurrentView('gallery');
     else if (path === '/copilot') setCurrentView('copilot');
     else setCurrentView('home');
 
@@ -151,7 +154,7 @@ const App: React.FC = () => {
         else if (p === '/design-systems') setCurrentView('design-systems');
         else if (p === '/privacy') setCurrentView('privacy');
         else if (p === '/terms') setCurrentView('terms');
-        else if (p === '/recent') setCurrentView('recent');
+        else if (p === '/gallery') setCurrentView('gallery');
         else if (p === '/copilot') setCurrentView('copilot');
         else setCurrentView('home');
     };
@@ -178,7 +181,13 @@ const App: React.FC = () => {
   const navigateTo = (view: ViewState) => {
       setCurrentView(view);
       const path = view === 'home' ? '/' : `/${view}`;
-      window.history.pushState({}, '', path);
+      // Wrap pushState in try-catch to prevent crashes in restricted environments (e.g. blob/sandbox)
+      try {
+        window.history.pushState({}, '', path);
+      } catch (e) {
+        console.warn('Navigation state update failed (likely due to sandbox environment):', e);
+      }
+      
       // Reset contextual states
       setIsAskKindlyActive(false);
       setCustomizedItem(null);
@@ -283,18 +292,82 @@ const App: React.FC = () => {
       ? (DESIGN_SYSTEMS.find(item => item.id === selectedId) || DESIGN_SYSTEMS[0])
       : (COMPONENT_ITEMS.find(item => item.id === selectedId) || COMPONENT_ITEMS[0])));
 
-  // Determine if we should use the floating card layout
-  const isFloatingLayout = ['home', 'library', 'design-systems', 'editor', 'recent', 'copilot'].includes(currentView);
+  // All page containers are now curved (floating style)
+  const isFloatingLayout = true;
 
-  const handlePromptUpdate = (newPrompt: string) => {
+  const handleItemUpdate = (updates: Partial<ComponentItem>) => {
     const baseItem = customizedItem || activeItem;
-    const finalItem = { ...baseItem, systemPrompt: newPrompt };
+    const finalItem = { ...baseItem, ...updates };
     setCustomizedItem(finalItem);
+    
     if (generatedItem && generatedItem.id === baseItem.id) {
         setGeneratedItem(finalItem);
     }
-    // Persist update to recent items
-    setRecentItems(prev => prev.map(item => item.id === finalItem.id ? finalItem : item));
+    // Persist update to gallery items if it exists there
+    setGalleryItems(prev => {
+        const exists = prev.some(i => i.id === finalItem.id);
+        if (exists) {
+            return prev.map(item => item.id === finalItem.id ? finalItem : item);
+        }
+        return prev;
+    });
+  };
+
+  // Handler for Canvas Generation from Ask Kindly
+  const handleCanvasGeneration = async (title: string, prompt: string, preGeneratedCode?: string) => {
+      // Create a new component item container
+      const newItem: ComponentItem = {
+          id: `generated-${Date.now()}`,
+          title: title,
+          description: "Generated via Ask Kindly Canvas",
+          views: 1,
+          copies: 0,
+          category: 'UI Component',
+          thumbnailClass: 'bg-indigo-50',
+          systemPrompt: prompt, 
+          code: preGeneratedCode || `<!-- Building ${title}... -->`, 
+          createdAt: Date.now(),
+          type: 'prototype'
+      };
+
+      if (!preGeneratedCode) {
+          // Fallback: Generate the actual code in the background if not provided
+          const systemPrompt = `ACT AS: Senior Frontend Developer.
+          TASK: Write code for a functional UI prototype.
+          CONTEXT: The user wants a single-file HTML prototype using Tailwind CSS.
+          USER PROMPT: ${prompt}
+          
+          INSTRUCTIONS:
+          1. Generate a COMPLETE, WORKING HTML file.
+          2. Use Tailwind CSS via CDN.
+          3. Use Vanilla JavaScript for interactivity.
+          4. The code must be self-contained in a single file.
+          
+          OUTPUT FORMAT:
+          Return ONLY raw JSON (no markdown) with this structure:
+          {
+            "code": "<!DOCTYPE html><html>...</html>"
+          }
+          `;
+
+          try {
+              const rawText = await generateMagicPrompt(systemPrompt);
+              let cleanText = rawText || "";
+              cleanText = cleanText.replace(/```json/g, "").replace(/```/g, "").trim();
+              const data = JSON.parse(cleanText);
+              
+              if (data.code) {
+                  newItem.code = data.code;
+              }
+          } catch (e) {
+              console.error("Failed to generate canvas code:", e);
+          }
+      }
+
+      setGeneratedItem(newItem);
+      setGalleryItems(prev => [newItem, ...prev]);
+      setCreationMode('prototype');
+      navigateTo('editor');
   };
 
   const handleInitialSubmit = (prompt: string, mode: 'prompt' | 'prototype' | 'image') => {
@@ -325,7 +398,7 @@ const App: React.FC = () => {
                  copies: 0
              };
              setGeneratedItem(newItem);
-             setRecentItems(prev => [newItem, ...prev]);
+             setGalleryItems(prev => [newItem, ...prev]);
              // For images, skip the building animation
              navigateTo('editor');
              return;
@@ -389,7 +462,6 @@ const App: React.FC = () => {
 
         if (!rawText) {
              console.warn("Magic Prompt returned empty response");
-             // Handle gracefully, maybe redirect back or show error
              setIsGenerating(false);
              navigateTo('planning');
              return;
@@ -416,11 +488,10 @@ const App: React.FC = () => {
                     type: creationMode
                 };
                 setGeneratedItem(newItem);
-                setRecentItems(prev => [newItem, ...prev]);
+                setGalleryItems(prev => [newItem, ...prev]);
                 await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (e) {
                 console.error("Failed to parse Magic Prompt response:", e);
-                // Fallback or error handling
             }
         }
     } catch (error) {
@@ -464,8 +535,8 @@ const App: React.FC = () => {
              if (cleanCode) {
                  const updatedItem = { ...currentItem, code: cleanCode };
                  setCustomizedItem(updatedItem);
-                 // Persist refinement to local storage via recentItems update
-                 setRecentItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+                 // Persist refinement to local storage via galleryItems update
+                 setGalleryItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
                  return "I've updated the prototype based on your request.";
              }
         } else {
@@ -486,8 +557,8 @@ const App: React.FC = () => {
              if (text) {
                  const updatedItem = { ...currentItem, systemPrompt: text };
                  setCustomizedItem(updatedItem);
-                 // Persist refinement to local storage via recentItems update
-                 setRecentItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+                 // Persist refinement to local storage via galleryItems update
+                 setGalleryItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
                  return "I've updated the system prompt.";
              }
         }
@@ -500,13 +571,13 @@ const App: React.FC = () => {
     }
   };
   
-  const handleNavClick = (view: 'library' | 'design-systems' | 'recent') => {
+  const handleNavClick = (view: 'library' | 'design-systems' | 'gallery') => {
       navigateTo(view);
       if (view === 'design-systems') setSelectedId('ds-classic');
       else if (view === 'library') setSelectedId('radiant-input');
   };
 
-  const handleRecentSelection = (item: ComponentItem) => {
+  const handleGallerySelection = (item: ComponentItem) => {
     setGeneratedItem(item);
     setCreationMode(item.type || 'prompt');
     navigateTo('editor');
@@ -524,11 +595,11 @@ const App: React.FC = () => {
         </button>
         
         <button 
-            onClick={() => handleNavClick('recent')} 
-            className={`flex flex-col items-center gap-1 p-2 ${currentView === 'recent' ? 'text-white' : 'text-white/50'}`}
+            onClick={() => handleNavClick('gallery')} 
+            className={`flex flex-col items-center gap-1 p-2 ${currentView === 'gallery' ? 'text-white' : 'text-white/50'}`}
         >
-            <Clock size={22} strokeWidth={currentView === 'recent' ? 2.5 : 2} />
-            <span className="text-[10px] font-medium">Recent</span>
+            <LayoutGrid size={22} strokeWidth={currentView === 'gallery' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Gallery</span>
         </button>
 
         <button 
@@ -562,9 +633,9 @@ const App: React.FC = () => {
 
           {/* View Toggles */}
           <div className="flex items-center gap-2">
-              <button onClick={() => handleNavClick('recent')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'recent' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
-                <RecentIcon />
-                <span>Recent</span>
+              <button onClick={() => handleNavClick('gallery')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'gallery' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                <LayoutGrid size={16} />
+                <span>My Gallery</span>
               </button>
               <button onClick={() => handleNavClick('library')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'library' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                 <LibraryIcon />
@@ -706,9 +777,9 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {/* Main Content Area */}
-      <div className={`flex-1 overflow-hidden relative ${isFloatingLayout ? 'px-0 pb-20 md:px-6 md:pb-6' : ''}`}>
-         <div className={`w-full h-full bg-white overflow-hidden relative ${isFloatingLayout ? 'md:squircle-box md:shadow-sm md:border border-gray-200' : ''}`}>
+      {/* Main Content Area - Global Curved & Floating Layout */}
+      <div className={`flex-1 overflow-hidden relative ${isFloatingLayout ? 'p-3 pb-24 md:px-6 md:pb-6' : ''}`}>
+         <div className={`w-full h-full bg-white overflow-hidden relative shadow-sm border border-gray-200 squircle-3xl`}>
              {currentView === 'home' && (
                  <HomeView 
                    onSubmit={handleInitialSubmit} 
@@ -733,9 +804,10 @@ const App: React.FC = () => {
                     <div className="hidden md:block h-full border-r border-gray-100">
                         {isAskKindlyActive ? (
                             <AskKindlyPanel 
-                                currentPrompt={activeItem?.systemPrompt || ""} 
-                                onReplace={handlePromptUpdate}
+                                activeItem={activeItem} 
+                                onUpdateItem={handleItemUpdate}
                                 onClose={() => setIsAskKindlyActive(false)}
+                                onGenerateCanvas={handleCanvasGeneration}
                             />
                         ) : (
                             <ChatPanel onGenerate={handleEditorGenerate} isGenerating={isGenerating} />
@@ -753,8 +825,12 @@ const App: React.FC = () => {
                  <CopilotView userName={user ? user.name.split(' ')[0] : 'Creator'} />
              )}
 
-             {currentView === 'recent' && (
-                 <RecentView items={recentItems} onSelectItem={handleRecentSelection} />
+             {currentView === 'gallery' && (
+                 <GalleryView 
+                    items={galleryItems} 
+                    onSelectItem={handleGallerySelection}
+                    onUpdateItems={setGalleryItems} 
+                 />
              )}
 
              {currentView === 'library' && (
@@ -762,9 +838,10 @@ const App: React.FC = () => {
                    <div className={`${isMobile ? 'w-full' : 'hidden md:block h-full border-r border-gray-100'}`}>
                       {isAskKindlyActive ? (
                             <AskKindlyPanel 
-                                currentPrompt={activeItem?.systemPrompt || ""} 
-                                onReplace={handlePromptUpdate}
+                                activeItem={activeItem} 
+                                onUpdateItem={handleItemUpdate}
                                 onClose={() => setIsAskKindlyActive(false)}
+                                onGenerateCanvas={handleCanvasGeneration}
                             />
                       ) : (
                           <Sidebar 
@@ -793,9 +870,10 @@ const App: React.FC = () => {
                    <div className={`${isMobile ? 'w-full' : 'hidden md:block h-full border-r border-gray-100'}`}>
                       {isAskKindlyActive ? (
                             <AskKindlyPanel 
-                                currentPrompt={activeItem?.systemPrompt || ""} 
-                                onReplace={handlePromptUpdate}
+                                activeItem={activeItem} 
+                                onUpdateItem={handleItemUpdate}
                                 onClose={() => setIsAskKindlyActive(false)}
+                                onGenerateCanvas={handleCanvasGeneration}
                             />
                       ) : (
                           <Sidebar 

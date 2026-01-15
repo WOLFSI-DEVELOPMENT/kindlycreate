@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { Paperclip, ArrowUp, ChevronDown, Check, Sparkles, Layout, Type as TypeIcon, Save } from 'lucide-react';
 import { AnimatedSphere } from './AnimatedSphere';
 
@@ -14,6 +15,8 @@ interface PlanningViewProps {
   onBuild: (history: Message[]) => void;
   creationMode?: 'prompt' | 'prototype' | 'image';
 }
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_INSTRUCTION = `You are a professional UI/UX Architect.
 Your goal is to prepare a detailed plan for a UI component.
@@ -172,13 +175,15 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
         const conversation = history.concat({ role: 'user', text: prompt })
             .map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
         
-        const fullPrompt = `${SYSTEM_INSTRUCTION}\n\nCONVERSATION HISTORY:\n${conversation}\n\nAI ASSISTANT RESPONSE:`;
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `CONVERSATION HISTORY:\n${conversation}\n\nUSER PROMPT: ${prompt}`,
+            config: {
+                systemInstruction: SYSTEM_INSTRUCTION,
+            }
+        });
 
-        const encoded = encodeURIComponent(fullPrompt);
-        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
-
-        if (!response.ok) throw new Error("Magic Prompt API failed");
-        const text = await response.text();
+        const text = response.text;
         
         if (text) {
              setMessages(prev => [...prev, { role: 'model', text: text }]);

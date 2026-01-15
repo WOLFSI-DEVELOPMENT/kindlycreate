@@ -29,7 +29,7 @@ const classifyIntent = (input: string) => {
         { terms: ['generate an image', 'create a logo', 'design an icon'], mode: 'image', weight: 20 },
         
         { terms: ['app', 'website', 'dashboard', 'interface', 'ui', 'screen', 'page', 'component', 'widget', 'layout', 'form', 'table', 'chart', 'navbar', 'sidebar', 'footer', 'button', 'input'], mode: 'prototype', weight: 5 },
-        { terms: ['code', 'html', 'css', 'react', 'tailwind', 'javascript', 'functional', 'interactive', 'prototype', 'working', 'demo'], mode: 'prototype', weight: 10 },
+        { terms: ['code', 'html', 'css', 'react', 'tailwind', 'javascript', 'functional', 'interactive', 'prototype', 'working', 'demo', 'canvas'], mode: 'prototype', weight: 10 },
         
         { terms: ['prompt', 'explain', 'describe', 'write', 'text', 'story', 'guide', 'tutorial', 'documentation', 'readme', 'help', 'question'], mode: 'prompt', weight: 5 },
         { terms: ['system instruction', 'system prompt', 'how to'], mode: 'prompt', weight: 10 }
@@ -208,7 +208,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
 
   const getModeLabel = () => {
       if (generationMode === 'prompt') return 'Prompt Generator';
-      if (generationMode === 'prototype') return 'Prototype';
+      if (generationMode === 'prototype') return 'Canvas';
       return 'Image Generator';
   };
 
@@ -372,7 +372,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                                                 className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors ${generationMode === 'prototype' && !isSmartSelect ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
                                              >
                                                  <FileCode size={16} />
-                                                 Prototype
+                                                 Canvas
                                              </button>
                                               <button
                                                 onClick={() => { setGenerationMode('image'); setIsModeOpen(false); setIsSmartSelect(false); }}
@@ -432,7 +432,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
           </div>
       </div>
 
-      {/* ... (Rest of component sections: Kindly Intelligence, Product Hunt, Launch Steps, FAQ, Footer, Modal) */}
       <div className="w-full bg-white py-24 border-t border-gray-100">
           <div className="max-w-4xl mx-auto px-6">
               
@@ -444,8 +443,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                   >
                       Kindly Intelligence
                   </h2>
+                  <div className="flex justify-center mb-6">
+                      <span className="bg-black text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-md">
+                          Kindly 2.0 Now Live
+                      </span>
+                  </div>
                   <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                      Introducing the first version of our proprietary AI model. Now available as a high-speed, edge-deployed API.
+                      Our most advanced model yet. Powered by Gemini 3.0 Flash for unprecedented speed and coherence in UI generation.
                   </p>
               </div>
 

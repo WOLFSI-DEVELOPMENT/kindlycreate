@@ -153,9 +153,10 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'prompt' | 'readme'>('preview');
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
 
-  // Determine if we should show visual tabs (Preview/Code) or just text tabs (Prompt/Readme)
-  // We want to show Preview/Code for Prototypes, UI Components, and Design Systems, or anything that HAS code.
-  const showVisualTabs = item.type === 'prototype' || item.category === 'UI Component' || item.category === 'Design System' || !!item.code;
+  // Determine if we should show visual tabs (Preview/Code)
+  // ONLY for Prototypes and Design Systems, as requested.
+  const showVisualTabs = item.type === 'prototype' || item.category === 'Design System';
+  const isPrototype = item.type === 'prototype';
 
   // Effect to set initial active tab
   useEffect(() => {
@@ -188,7 +189,10 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
     let textToDownload = '';
     let fileName = '';
 
-    if (activeTab === 'prompt') {
+    if (isPrototype) {
+        textToDownload = item.code || '';
+        fileName = `${item.id}.html`;
+    } else if (activeTab === 'prompt') {
         textToDownload = item.systemPrompt;
         fileName = `${item.id}-prompt.txt`;
     } else if (activeTab === 'code') {
@@ -268,7 +272,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
       {/* Floating Toolbar */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-1.5 bg-white rounded-full shadow-lg border border-gray-200">
           
-          {/* Device Toggles */}
+          {/* Device Toggles - Only for Prototypes/Design Systems */}
           {showVisualTabs && (
               <div className="flex bg-gray-100 rounded-full p-1">
                   <button 
@@ -297,7 +301,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
                     <button 
                         onClick={() => setActiveTab('preview')} 
                         className={`p-2 rounded-full transition-all ${activeTab === 'preview' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                        title="Preview"
+                        title="Canvas"
                     >
                         <Eye size={16} />
                     </button>
@@ -310,13 +314,15 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
                     </button>
                 </>
              )}
-             <button 
-                onClick={() => setActiveTab('prompt')} 
-                className={`p-2 rounded-full transition-all ${activeTab === 'prompt' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                title="System Prompt"
-             >
-                <Terminal size={16} />
-             </button>
+             {!isPrototype && (
+                 <button 
+                    onClick={() => setActiveTab('prompt')} 
+                    className={`p-2 rounded-full transition-all ${activeTab === 'prompt' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                    title="System Prompt"
+                 >
+                    <Terminal size={16} />
+                 </button>
+             )}
           </div>
 
           <div className="w-px h-4 bg-gray-200 mx-1"></div>
@@ -334,13 +340,15 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
               )}
 
               {/* Copy Button */}
-              <button 
-                onClick={handleCopy}
-                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
-                title="Copy to Clipboard"
-              >
-                {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-              </button>
+              {!isPrototype && (
+                  <button 
+                    onClick={handleCopy}
+                    className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
+                    title="Copy to Clipboard"
+                  >
+                    {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                  </button>
+              )}
 
               {/* Download Button */}
               <button 
@@ -351,49 +359,51 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
                 <Download size={16} />
               </button>
               
-              <div className="relative">
-                  <button 
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full text-xs font-bold hover:bg-gray-800 transition-colors"
-                  >
-                      <span>Export</span>
-                      <ChevronDown size={12} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
+              {!isPrototype && (
+                  <div className="relative">
+                      <button 
+                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                        className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full text-xs font-bold hover:bg-gray-800 transition-colors"
+                      >
+                          <span>Export</span>
+                          <ChevronDown size={12} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
 
-                  {/* Export Dropdown */}
-                  {dropdownOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)}></div>
-                      <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-1.5 overflow-hidden">
-                        <button onClick={() => openUrl('https://chatgpt.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <ChatGPTIcon /> ChatGPT
-                        </button>
-                        <button onClick={() => openUrl('cursor://link/prompt?text={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <CursorIcon /> Cursor
-                        </button>
-                        <button onClick={() => openUrl('https://bolt.new/?prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <BoltIcon /> Bolt
-                        </button>
-                         <button onClick={() => openUrl('https://v0.dev/?q={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <V0Icon /> v0
-                        </button>
-                        <button onClick={() => openUrl('https://lovable.dev/?autosubmit=true#prompt={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <LovableIcon /> Lovable
-                        </button>
-                        <button onClick={() => openUrl('https://aistudio.google.com/apps?autosubmit=true&prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <AIStudioIcon /> Google AI Studio
-                        </button>
-                        <button onClick={() => openUrl('https://grok.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <GrokIcon /> Grok
-                        </button>
-                        <div className="h-px bg-gray-100 my-1"></div>
-                        <button onClick={() => { handleCopy(); setDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                            <CopyIcon /> {copied ? 'Copied!' : 'Copy Prompt'}
-                        </button>
-                      </div>
-                    </>
-                  )}
-              </div>
+                      {/* Export Dropdown */}
+                      {dropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)}></div>
+                          <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-1.5 overflow-hidden">
+                            <button onClick={() => openUrl('https://chatgpt.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <ChatGPTIcon /> ChatGPT
+                            </button>
+                            <button onClick={() => openUrl('cursor://link/prompt?text={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <CursorIcon /> Cursor
+                            </button>
+                            <button onClick={() => openUrl('https://bolt.new/?prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <BoltIcon /> Bolt
+                            </button>
+                             <button onClick={() => openUrl('https://v0.dev/?q={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <V0Icon /> v0
+                            </button>
+                            <button onClick={() => openUrl('https://lovable.dev/?autosubmit=true#prompt={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <LovableIcon /> Lovable
+                            </button>
+                            <button onClick={() => openUrl('https://aistudio.google.com/apps?autosubmit=true&prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <AIStudioIcon /> Google AI Studio
+                            </button>
+                            <button onClick={() => openUrl('https://grok.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <GrokIcon /> Grok
+                            </button>
+                            <div className="h-px bg-gray-100 my-1"></div>
+                            <button onClick={() => { handleCopy(); setDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                <CopyIcon /> {copied ? 'Copied!' : 'Copy Prompt'}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                  </div>
+              )}
           </div>
       </div>
 
@@ -411,7 +421,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
         )}
 
         {/* Prompt View */}
-        {activeTab === 'prompt' && (
+        {activeTab === 'prompt' && !isPrototype && (
           <div className="w-full h-full flex flex-col items-center pt-24 px-6 md:px-20 bg-white overflow-y-auto">
              <div className="max-w-4xl w-full pb-20">
                  <div className="relative mb-6">
@@ -437,6 +447,17 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
         )}
 
       </div>
+
+      {/* Floating Ask Kindly Button */}
+      {onToggleAskKindly && !isAskKindlyActive && (
+        <button
+            onClick={onToggleAskKindly}
+            className="absolute bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-black rounded-full text-sm font-medium transition-opacity hover:opacity-80"
+        >
+            <BlingIcon />
+            <span>Ask Kindly</span>
+        </button>
+      )}
     </div>
   );
 };

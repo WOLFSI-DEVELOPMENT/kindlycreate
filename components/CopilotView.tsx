@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { Mic, ArrowUp, Sparkles, Image as ImageIcon, MessageSquare, Plus, Code } from 'lucide-react';
 import { AnimatedSphere } from './AnimatedSphere';
 import { useDeepgram } from '../hooks/useDeepgram';
@@ -14,6 +15,8 @@ interface Message {
 interface CopilotViewProps {
   userName?: string;
 }
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const CopilotView: React.FC<CopilotViewProps> = ({ userName = "Creator" }) => {
   const [inputValue, setInputValue] = useState('');
@@ -64,14 +67,14 @@ export const CopilotView: React.FC<CopilotViewProps> = ({ userName = "Creator" }
   const generateText = async (prompt: string) => {
       setIsTyping(true);
       try {
-        const encoded = encodeURIComponent(`You are Kindly Copilot, a helpful and creative AI assistant. 
-        User says: ${prompt}
-        
-        Respond helpfully and concisely.`);
-        
-        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
-        if (!response.ok) throw new Error("API failed");
-        const text = await response.text();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `User says: ${prompt}`,
+            config: {
+                systemInstruction: "You are Kindly Copilot, a helpful and creative AI assistant. Respond helpfully and concisely.",
+            }
+        });
+        const text = response.text;
         
         if (text) {
              setMessages(prev => [...prev, { role: 'model', text: text }]);
