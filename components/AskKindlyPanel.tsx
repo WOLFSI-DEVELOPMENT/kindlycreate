@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowUp, X, Sparkles, MessageSquare, Zap, BarChart2, Clock } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import { AnimatedSphere } from './AnimatedSphere';
 
 interface AskKindlyPanelProps {
@@ -80,8 +79,6 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
     setIsGenerating(true);
 
     try {
-      const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
-      const ai = new GoogleGenAI({ apiKey: apiKey });
       const systemInstruction = `You are a helpful AI assistant for a Prompt Engineering tool. 
       Your goal is to assist the user with their "System Prompt".
       
@@ -95,25 +92,23 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
       1. If the user asks for a modification, rewrite, or improvement:
          - Generate a NEW version of the prompt.
          - Provide a short explanation of changes.
-         - Return JSON: { "explanation": "...", "newPrompt": "..." }
+         - Return raw JSON: { "explanation": "...", "newPrompt": "..." }
 
       2. If the user asks a question, asks for an explanation, or just wants to chat about the code/prompt:
          - Answer their question clearly.
-         - Return JSON: { "explanation": "Your answer here...", "newPrompt": null }
+         - Return raw JSON: { "explanation": "Your answer here...", "newPrompt": null }
       
-      3. Return ONLY valid JSON.
+      3. Return ONLY valid raw JSON. Do not include markdown code blocks.
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: "Process request.",
-        config: {
-            systemInstruction: systemInstruction,
-            responseMimeType: "application/json"
-        }
-      });
+      const encoded = encodeURIComponent(systemInstruction);
+      const response = await fetch(`https://text.pollinations.ai/${encoded}`);
 
-      const json = JSON.parse(response.text || '{}');
+      if (!response.ok) throw new Error('Magic Prompt API failed');
+      const text = await response.text();
+      
+      let cleanText = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      const json = JSON.parse(cleanText || '{}');
       
       if (json.newPrompt) {
           setMessages(prev => [...prev, { 

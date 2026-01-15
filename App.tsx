@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PreviewArea } from './components/PreviewArea';
@@ -13,7 +14,6 @@ import { SettingsView } from './components/SettingsView';
 import { AskKindlyPanel } from './components/AskKindlyPanel';
 import { COMPONENT_ITEMS, DESIGN_SYSTEMS } from './constants';
 import { ComponentItem, User } from './types';
-import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2 } from 'lucide-react';
 
 declare global {
@@ -55,6 +55,20 @@ const DesignSystemIcon = () => (
 );
 
 type ViewState = 'home' | 'planning' | 'building' | 'editor' | 'library' | 'design-systems' | 'recent' | 'privacy' | 'terms' | 'docs' | 'settings';
+
+// --- MAGIC PROMPT HELPER (Powered by Kindly Intelligence) ---
+const generateMagicPrompt = async (prompt: string) => {
+    try {
+        const encoded = encodeURIComponent(prompt);
+        // Using GET as per standard Pollinations usage to avoid 405 Method Not Allowed
+        const response = await fetch(`https://text.pollinations.ai/${encoded}`);
+        if (!response.ok) throw new Error('Magic Prompt generation failed');
+        return await response.text();
+    } catch (error) {
+        console.error("Magic Prompt Error:", error);
+        return null;
+    }
+};
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -252,59 +266,75 @@ const App: React.FC = () => {
     navigateTo('building');
     
     try {
-        // Fallback to localStorage API key if process.env.API_KEY is missing/invalid in client
-        const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
-        const ai = new GoogleGenAI({ apiKey: apiKey });
         const conversationText = chatHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
 
         let prompt = '';
-        let schema: Schema;
-
         if (creationMode === 'prototype') {
             prompt = `You are an expert Full Stack Developer using Tailwind CSS v4.1 and Vanilla JavaScript. 
             The user wants a fictional functional prototype.
-            CONVERSATION HISTORY: ${conversationText}
+            CONVERSATION HISTORY: 
+            ${conversationText}
+            
             REQUIREMENTS: HTML5, Tailwind CSS (CDN), Vanilla JS. Single File HTML.
-            Output JSON: title, description, code.`;
-            schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, code: { type: Type.STRING } }, required: ["title", "description", "code"] };
+            
+            CRITICAL: Return ONLY valid raw JSON without any markdown formatting. The JSON must match this structure:
+            {
+              "title": "Project Title",
+              "description": "Short description",
+              "code": "<!DOCTYPE html>..."
+            }`;
         } else {
             prompt = `Expert Prompt Engineer. Generate resources.
-            CONVERSATION HISTORY: ${conversationText}
-            Output JSON: title, description, systemPrompt, readme.`;
-            schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, systemPrompt: { type: Type.STRING }, readme: { type: Type.STRING } }, required: ["title", "description", "systemPrompt", "readme"] };
+            CONVERSATION HISTORY: 
+            ${conversationText}
+            
+            CRITICAL: Return ONLY valid raw JSON without any markdown formatting. The JSON must match this structure:
+            {
+              "title": "Resource Title",
+              "description": "Short description",
+              "systemPrompt": "The full system prompt text...",
+              "readme": "Markdown readme content..."
+            }`;
         }
 
-        const apiPromise = ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: prompt,
-            config: { responseMimeType: "application/json", responseSchema: schema }
-        });
-
-        const response: any = await apiPromise;
+        const rawText = await generateMagicPrompt(prompt);
         if (genId !== generationRef.current) return;
 
-        let cleanText = response.text || "";
+        if (!rawText) {
+             console.warn("Magic Prompt returned empty response");
+             // Handle gracefully, maybe redirect back or show error
+             setIsGenerating(false);
+             navigateTo('planning');
+             return;
+        }
+
+        let cleanText = rawText || "";
         cleanText = cleanText.replace(/```json/g, "").replace(/```/g, "").trim();
 
         if (cleanText) {
-            const data = JSON.parse(cleanText);
-            const newItem: ComponentItem = {
-                id: `generated-${Date.now()}`,
-                title: data.title,
-                description: data.description,
-                views: 1,
-                copies: 0,
-                category: 'UI Component',
-                thumbnailClass: 'bg-indigo-50',
-                systemPrompt: data.systemPrompt || "Prototype Mode",
-                readme: data.readme,
-                code: data.code,
-                createdAt: Date.now(),
-                type: creationMode
-            };
-            setGeneratedItem(newItem);
-            setRecentItems(prev => [newItem, ...prev]);
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            try {
+                const data = JSON.parse(cleanText);
+                const newItem: ComponentItem = {
+                    id: `generated-${Date.now()}`,
+                    title: data.title,
+                    description: data.description,
+                    views: 1,
+                    copies: 0,
+                    category: 'UI Component',
+                    thumbnailClass: 'bg-indigo-50',
+                    systemPrompt: data.systemPrompt || "Prototype Mode",
+                    readme: data.readme,
+                    code: data.code,
+                    createdAt: Date.now(),
+                    type: creationMode
+                };
+                setGeneratedItem(newItem);
+                setRecentItems(prev => [newItem, ...prev]);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            } catch (e) {
+                console.error("Failed to parse Magic Prompt response:", e);
+                // Fallback or error handling
+            }
         }
     } catch (error) {
         console.error("Error generating:", error);
@@ -327,17 +357,13 @@ const App: React.FC = () => {
     setIsGenerating(true);
     
     try {
-        const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        
         const currentItem = customizedItem || generatedItem!;
-        // Handle both Prompt and Prototype modes for editor
+        
         if (currentItem.type === 'prototype') {
              const currentCode = currentItem.code || "";
              const systemPrompt = `You are an expert UI Engineer. 
              Modify the following code based on the user's request.
-             Return the FULL updated HTML code.
-             Do not include markdown fences.
+             Return ONLY the FULL updated HTML code. Do not include markdown fences or explanation.
              
              CURRENT CODE:
              ${currentCode}
@@ -345,14 +371,11 @@ const App: React.FC = () => {
              USER REQUEST:
              ${prompt}`;
 
-             const response = await ai.models.generateContent({
-                 model: 'gemini-3-flash-preview',
-                 contents: systemPrompt,
-             });
+             const newCode = await generateMagicPrompt(systemPrompt);
+             const cleanCode = newCode?.replace(/```html/g, '').replace(/```/g, '').trim();
              
-             const newCode = response.text?.replace(/```html/g, '').replace(/```/g, '').trim();
-             if (newCode) {
-                 setCustomizedItem({ ...currentItem, code: newCode });
+             if (cleanCode) {
+                 setCustomizedItem({ ...currentItem, code: cleanCode });
                  return "I've updated the prototype based on your request.";
              }
         } else {
@@ -368,13 +391,10 @@ const App: React.FC = () => {
              USER REQUEST:
              ${prompt}`;
              
-             const response = await ai.models.generateContent({
-                 model: 'gemini-3-flash-preview',
-                 contents: metaPrompt,
-             });
+             const text = await generateMagicPrompt(metaPrompt);
              
-             if (response.text) {
-                 setCustomizedItem({ ...currentItem, systemPrompt: response.text });
+             if (text) {
+                 setCustomizedItem({ ...currentItem, systemPrompt: text });
                  return "I've updated the system prompt.";
              }
         }

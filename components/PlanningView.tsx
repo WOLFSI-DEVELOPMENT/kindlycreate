@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Paperclip, ArrowUp, ChevronDown, Check, Sparkles, Layout, Type as TypeIcon } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import { AnimatedSphere } from './AnimatedSphere';
 
 interface Message {
@@ -171,21 +170,23 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
   const generateTextResponse = async (prompt: string, history: Message[] = []) => {
       setIsTyping(true);
       try {
-        const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        const contents = history.concat({ role: 'user', text: prompt }).map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+        const conversation = history.concat({ role: 'user', text: prompt })
+            .map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
         
-        const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: contents,
-            config: { systemInstruction: SYSTEM_INSTRUCTION }
-        });
+        const fullPrompt = `${SYSTEM_INSTRUCTION}\n\nCONVERSATION HISTORY:\n${conversation}\n\nAI ASSISTANT RESPONSE:`;
+
+        const encoded = encodeURIComponent(fullPrompt);
+        const response = await fetch(`https://text.pollinations.ai/${encoded}`);
+
+        if (!response.ok) throw new Error("Magic Prompt API failed");
+        const text = await response.text();
         
-        if (res.text) {
-             setMessages(prev => [...prev, { role: 'model', text: res.text }]);
+        if (text) {
+             setMessages(prev => [...prev, { role: 'model', text: text }]);
         }
       } catch (e) {
           console.error(e);
+          setMessages(prev => [...prev, { role: 'model', text: "I'm having trouble connecting to my creative engine. Please try again." }]);
       } finally {
           setIsTyping(false);
       }
