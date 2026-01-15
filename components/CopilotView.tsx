@@ -69,7 +69,7 @@ export const CopilotView: React.FC<CopilotViewProps> = ({ userName = "Creator" }
         
         Respond helpfully and concisely.`);
         
-        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=openai`);
+        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
         if (!response.ok) throw new Error("API failed");
         const text = await response.text();
         
@@ -203,7 +203,7 @@ export const CopilotView: React.FC<CopilotViewProps> = ({ userName = "Creator" }
       </div>
 
       {/* Input Area */}
-      <div className="absolute bottom-6 left-0 right-0 px-4 z-20">
+      <div className="absolute bottom-6 md:bottom-6 left-0 right-0 px-4 z-20">
           <div className="max-w-3xl mx-auto bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-gray-200 p-2 flex items-center gap-2 transition-shadow focus-within:shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
               <button className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
                   <Plus size={20} strokeWidth={2} />
@@ -238,7 +238,7 @@ export const CopilotView: React.FC<CopilotViewProps> = ({ userName = "Creator" }
                   </button>
               </div>
           </div>
-          <div className="text-center mt-3 text-xs text-gray-400 font-medium">
+          <div className="text-center mt-3 text-xs text-gray-400 font-medium pb-20 md:pb-0">
               Gemini 3.0 Pro • Kindly Copilot can make mistakes. Check important info.
           </div>
       </div>

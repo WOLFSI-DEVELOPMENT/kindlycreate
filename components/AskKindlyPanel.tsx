@@ -102,7 +102,7 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ currentPrompt, o
       `;
 
       const encoded = encodeURIComponent(systemInstruction);
-      const response = await fetch(`https://text.pollinations.ai/${encoded}?model=openai`);
+      const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
 
       if (!response.ok) throw new Error('Magic Prompt API failed');
       const text = await response.text();

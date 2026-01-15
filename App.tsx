@@ -15,7 +15,7 @@ import { AskKindlyPanel } from './components/AskKindlyPanel';
 import { CopilotView } from './components/CopilotView';
 import { COMPONENT_ITEMS, DESIGN_SYSTEMS } from './constants';
 import { ComponentItem, User } from './types';
-import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2, Sparkles, Home } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, Loader2, CheckCircle2, Sparkles, Home, Clock, Menu } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -33,7 +33,7 @@ const ExpandIcon = () => (
 
 const RecentIcon = () => (
   <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-    <path d="M8 0.15999999999999998C5.9901333333333335 0.16573333333333332 4.0592 0.9431333333333334 2.6060666666666665 2.3316666666666666V0.944c0 -0.20793333333333333 -0.08259999999999999 -0.4073333333333333 -0.22959999999999997 -0.5544C2.2294 0.24259999999999998 2.03 0.15999999999999998 1.8220666666666665 0.15999999999999998s-0.4073333333333333 0.08259999999999999 -0.5543333333333333 0.22959999999999997c-0.14706666666666665 0.14706666666666665 -0.22966666666666663 0.3464666666666667 -0.22966666666666663 0.5544v3.5279999999999996c0 0.20793333333333333 0.08259999999999999 0.4073333333333333 0.22966666666666663 0.5544 0.147 0.147 0.34639999999999993 0.22959999999999997 0.5543333333333333 0.22959999999999997h3.5279999999999996c0.20793333333333333 0 0.4073333333333333 -0.08259999999999999 0.5544 -0.22959999999999997 0.147 -0.14706666666666665 0.22959999999999997 -0.3464666666666667 0.22959999999999997 -0.5544s-0.08259999999999999 -0.4073333333333333 -0.22959999999999997 -0.5544c-0.14706666666666665 -0.147 -0.3464666666666667 -0.22959999999999997 -0.5544 -0.22959999999999997H3.4684666666666666c1.0080666666666667 -1.0534 2.3516 -1.7227333333333332 3.799666666666666 -1.8928666666666667 1.4481333333333333 -0.17006666666666664 2.9102 0.1696 4.134933333333333 0.9607333333333333 1.2247333333333332 0.7910666666666667 2.135533333333333 1.9842 2.5759333333333334 3.3741333333333334 0.44039999999999996 1.3899333333333335 0.38273333333333337 2.889866666666667 -0.16299999999999998 4.241866666666667s-1.5453999999999999 2.471733333333333 -2.8272666666666666 3.1665333333333328c-1.2818 0.6948 -2.7656666666666667 0.9212666666666666 -4.1964 0.6405333333333333 -1.4307999999999998 -0.2808 -2.719 -1.0512 -3.6432666666666664 -2.1788C2.2248666666666663 10.872399999999999 1.7223333333333333 9.457999999999998 1.728 8c0 -0.20793333333333333 -0.08259999999999999 -0.4074 -0.22959999999999997 -0.5544 -0.14706666666666665 -0.147 -0.3464666666666667 -0.22959999999999997 -0.5544 -0.22959999999999997s-0.4073333333333333 0.08259999999999999 -0.5544 0.22959999999999997C0.24259999999999998 7.592599999999999 0.15999999999999998 7.792066666666667 0.15999999999999998 8c0 1.5505999999999998 0.4598 3.0664 1.3212666666666666 4.355666666666666 0.8614666666666666 1.2892666666666666 2.085933333333333 2.294133333333333 3.518466666666667 2.887533333333333 1.4325999999999999 0.5933999999999999 3.0089333333333332 0.7486666666666666 4.529733333333333 0.4462 1.5208 -0.3026 2.917733333333333 -1.0492666666666666 4.014266666666666 -2.1456666666666666 1.0964 -1.0965333333333334 1.8431333333333333 -2.4934666666666665 2.1456666666666666 -4.014266666666666 0.30246666666666666 -1.5208 0.1472 -3.097133333333333 -0.4462 -4.529733333333333 -0.5933999999999999 -1.4325333333333332 -1.5982666666666667 -2.657 -2.887533333333333 -3.518466666666667C11.066399999999998 0.6197999999999999 9.5506 0.15999999999999998 8 0.15999999999999998Zm0 4.704c-0.20793333333333333 0 -0.4074 0.08259999999999999 -0.5544 0.22959999999999997 -0.147 0.14706666666666665 -0.22959999999999997 0.3464666666666667 -0.22959999999999997 0.5544V8c0 0.20793333333333333 0.08259999999999999 0.4073333333333333 0.22959999999999997 0.5543333333333333s0.3464666666666667 0.22966666666666663 0.5544 0.22966666666666663h1.5679999999999998c0.20793333333333333 0 0.4073333333333333 -0.08266666666666667 0.5543333333333333 -0.22966666666666663s0.22966666666666663 -0.34639999999999993 0.22966666666666663 -0.5543333333333333c0 -0.20793333333333333 -0.08266666666666667 -0.4074 -0.22966666666666663 -0.5544s-0.34639999999999993 -0.22959999999999997 -0.5543333333333333 -0.22959999999999997h-0.7839999999999999V5.648c0 -0.20793333333333333 -0.08266666666666667 -0.4073333333333333 -0.22966666666666663 -0.5544 -0.147 -0.147 -0.34639999999999993 -0.22959999999999997 -0.5543333333333333 -0.22959999999999997Z" fill="currentColor" strokeWidth="0.6667"></path>
+    <path d="M8 0.15999999999999998C5.9901333333333335 0.16573333333333332 4.0592 0.9431333333333334 2.6060666666666665 2.3316666666666666V0.944c0 -0.20793333333333333 -0.08259999999999999 -0.4073333333333333 -0.22959999999999997 -0.5544C2.2294 0.24259999999999998 2.03 0.15999999999999998 1.8220666666666665 0.15999999999999998s-0.4073333333333333 0.08259999999999999 -0.5543333333333333 0.22959999999999997c-0.14706666666666665 0.14706666666666665 -0.22966666666666663 0.3464666666666667 -0.22966666666666663 0.5544v3.5279999999999996c0 0.20793333333333333 0.08259999999999999 0.4073333333333333 0.22966666666666663 0.5544 0.147 0.147 0.34639999999999993 0.22959999999999997 0.5543333333333333 0.22959999999999997h3.5279999999999996c0.20793333333333333 0 0.4073333333333333 -0.08259999999999999 0.5544 -0.22959999999999997 0.147 -0.14706666666666665 -0.22959999999999997 -0.3464666666666667 0.22959999999999997 -0.5544s-0.08259999999999999 -0.4073333333333333 -0.22959999999999997 -0.5544c-0.14706666666666665 -0.147 -0.3464666666666667 -0.22959999999999997 -0.5544 -0.22959999999999997H3.4684666666666666c1.0080666666666667 -1.0534 2.3516 -1.7227333333333332 3.799666666666666 -1.8928666666666667 1.4481333333333333 -0.17006666666666664 2.9102 0.1696 4.134933333333333 0.9607333333333333 1.2247333333333332 0.7910666666666667 2.135533333333333 1.9842 2.5759333333333334 3.3741333333333334 0.44039999999999996 1.3899333333333335 0.38273333333333337 2.889866666666667 -0.16299999999999998 4.241866666666667s-1.5453999999999999 2.471733333333333 -2.8272666666666666 3.1665333333333328c-1.2818 0.6948 -2.7656666666666667 0.9212666666666666 -4.1964 0.6405333333333333 -1.4307999999999998 -0.2808 -2.719 -1.0512 -3.6432666666666664 -2.1788C2.2248666666666663 10.872399999999999 1.7223333333333333 9.457999999999998 1.728 8c0 -0.20793333333333333 -0.08259999999999999 -0.4074 -0.22959999999999997 -0.5544 -0.14706666666666665 -0.147 -0.3464666666666667 -0.22959999999999997 -0.5544 -0.22959999999999997s-0.4073333333333333 0.08259999999999999 -0.5544 0.22959999999999997C0.24259999999999998 7.592599999999999 0.15999999999999998 7.792066666666667 0.15999999999999998 8c0 1.5505999999999998 0.4598 3.0664 1.3212666666666666 4.355666666666666 0.8614666666666666 1.2892666666666666 2.085933333333333 2.294133333333333 3.518466666666667 2.887533333333333 1.4325999999999999 0.5933999999999999 3.0089333333333332 0.7486666666666666 4.529733333333333 0.4462 1.5208 -0.3026 2.917733333333333 -1.0492666666666666 4.014266666666666 -2.1456666666666666 1.0964 -1.0965333333333334 1.8431333333333333 -2.4934666666666665 2.1456666666666666 -4.014266666666666 0.30246666666666666 -1.5208 0.1472 -3.097133333333333 -0.4462 -4.529733333333333 -0.5933999999999999 -1.4325333333333332 -1.5982666666666667 -2.657 -2.887533333333333 -3.518466666666667C11.066399999999998 0.6197999999999999 9.5506 0.15999999999999998 8 0.15999999999999998Zm0 4.704c-0.20793333333333333 0 -0.4074 0.08259999999999999 -0.5544 0.22959999999999997 -0.147 0.14706666666666665 -0.22959999999999997 0.3464666666666667 -0.22959999999999997 0.5544V8c0 0.20793333333333333 0.08259999999999999 0.4073333333333333 0.22959999999999997 0.5543333333333333s0.3464666666666667 0.22966666666666663 0.5544 0.22966666666666663h1.5679999999999998c0.20793333333333333 0 0.4073333333333333 -0.08266666666666667 0.5543333333333333 -0.22966666666666663s0.22966666666666663 -0.34639999999999993 0.22966666666666663 -0.5543333333333333c0 -0.20793333333333333 -0.08266666666666667 -0.4074 -0.22966666666666663 -0.5544s-0.34639999999999993 -0.22959999999999997 -0.5543333333333333 -0.22959999999999997h-0.7839999999999999V5.648c0 -0.20793333333333333 -0.08266666666666667 -0.4073333333333333 -0.22966666666666663 -0.5544 -0.147 -0.147 -0.34639999999999993 -0.22959999999999997 -0.5543333333333333 -0.22959999999999997Z" fill="currentColor" strokeWidth="0.6667"></path>
   </svg>
 );
 
@@ -62,7 +62,7 @@ const generateMagicPrompt = async (prompt: string) => {
     try {
         const encoded = encodeURIComponent(prompt);
         // Using GET as per standard Pollinations usage to avoid 405 Method Not Allowed
-        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=openai`);
+        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
         if (!response.ok) throw new Error('Magic Prompt generation failed');
         return await response.text();
     } catch (error) {
@@ -81,6 +81,18 @@ const App: React.FC = () => {
   const [generatedItem, setGeneratedItem] = useState<ComponentItem | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const generationRef = useRef(0);
+
+  // Responsive State
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // Init
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Initialize recentItems from LocalStorage
   const [recentItems, setRecentItems] = useState<ComponentItem[]>(() => {
@@ -329,31 +341,47 @@ const App: React.FC = () => {
 
         let prompt = '';
         if (creationMode === 'prototype') {
-            prompt = `You are an expert Full Stack Developer using Tailwind CSS v4.1 and Vanilla JavaScript. 
-            The user wants a fictional functional prototype.
-            CONVERSATION HISTORY: 
+            prompt = `ACT AS: Senior Frontend Developer.
+            TASK: Write code for a functional UI prototype.
+            CONTEXT: The user wants a single-file HTML prototype using Tailwind CSS.
+            USER PROMPT HISTORY:
             ${conversationText}
             
-            REQUIREMENTS: HTML5, Tailwind CSS (CDN), Vanilla JS. Single File HTML.
+            INSTRUCTIONS:
+            1. Generate a COMPLETE, WORKING HTML file.
+            2. Use Tailwind CSS via CDN.
+            3. Use Vanilla JavaScript for interactivity.
+            4. The code must be self-contained in a single file.
             
-            CRITICAL: Return ONLY valid raw JSON without any markdown formatting. The JSON must match this structure:
+            OUTPUT FORMAT:
+            Return ONLY raw JSON (no markdown) with this structure:
             {
-              "title": "Project Title",
-              "description": "Short description",
-              "code": "<!DOCTYPE html>..."
-            }`;
+              "title": "Title of the prototype",
+              "description": "Short description of functionality",
+              "code": "<!DOCTYPE html><html>...</html>"
+            }
+            `;
         } else {
-            prompt = `Expert Prompt Engineer. Generate resources.
-            CONVERSATION HISTORY: 
+            prompt = `ACT AS: Expert Prompt Engineer.
+            TASK: Write a system prompt for an LLM.
+            CONTEXT: The user wants a text prompt they can paste into an AI coding tool (like Cursor or Bolt).
+            USER PROMPT HISTORY:
             ${conversationText}
             
-            CRITICAL: Return ONLY valid raw JSON without any markdown formatting. The JSON must match this structure:
+            INSTRUCTIONS:
+            1. Do NOT write code. Write a PROMPT describing how to write code.
+            2. The 'systemPrompt' field should contain the detailed instructions for the AI.
+            3. The 'readme' field should be a markdown guide.
+            
+            OUTPUT FORMAT:
+            Return ONLY raw JSON (no markdown) with this structure:
             {
-              "title": "Resource Title",
+              "title": "Title of the prompt",
               "description": "Short description",
-              "systemPrompt": "The full system prompt text...",
-              "readme": "Markdown readme content..."
-            }`;
+              "systemPrompt": "You are an expert developer...",
+              "readme": "# Guide..."
+            }
+            `;
         }
 
         const rawText = await generateMagicPrompt(prompt);
@@ -484,12 +512,49 @@ const App: React.FC = () => {
     navigateTo('editor');
   };
 
+  // --- MOBILE NAVIGATION COMPONENT ---
+  const MobileNav = () => (
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black text-white h-20 flex items-center justify-around z-[100] pb-2 rounded-t-[20px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <button 
+            onClick={() => navigateTo('home')} 
+            className={`flex flex-col items-center gap-1 p-2 ${currentView === 'home' ? 'text-white' : 'text-white/50'}`}
+        >
+            <Home size={22} strokeWidth={currentView === 'home' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Home</span>
+        </button>
+        
+        <button 
+            onClick={() => handleNavClick('recent')} 
+            className={`flex flex-col items-center gap-1 p-2 ${currentView === 'recent' ? 'text-white' : 'text-white/50'}`}
+        >
+            <Clock size={22} strokeWidth={currentView === 'recent' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Recent</span>
+        </button>
+
+        <button 
+            onClick={() => handleNavClick('library')} 
+            className={`flex flex-col items-center gap-1 p-2 ${currentView === 'library' || currentView === 'design-systems' ? 'text-white' : 'text-white/50'}`}
+        >
+            <Menu size={22} strokeWidth={currentView === 'library' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Library</span>
+        </button>
+
+        <button 
+            onClick={() => navigateTo('copilot')} 
+            className={`flex flex-col items-center gap-1 p-2 ${currentView === 'copilot' ? 'text-blue-400' : 'text-white/50'}`}
+        >
+            <Sparkles size={22} strokeWidth={currentView === 'copilot' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Copilot</span>
+        </button>
+    </div>
+  );
+
   return (
     <div className="w-full h-screen flex flex-col bg-[#F9FAFB] font-sans overflow-hidden">
       
-      {/* Top Navigation */}
+      {/* Top Navigation (Desktop) */}
       {currentView !== 'building' && (
-        <div className="h-16 flex items-center justify-between px-6 z-50 shrink-0 relative bg-[#F9FAFB]">
+        <div className="hidden md:flex h-16 items-center justify-between px-6 z-50 shrink-0 relative bg-[#F9FAFB]">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigateTo('home')}>
               <img src="https://iili.io/f8yBZN9.png" alt="Kindly Create" className="w-12 h-12 object-contain" />
               <span className="font-bold text-lg text-gray-900 tracking-tight hidden md:block">Kindly Create</span>
@@ -499,15 +564,15 @@ const App: React.FC = () => {
           <div className="flex items-center gap-2">
               <button onClick={() => handleNavClick('recent')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'recent' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                 <RecentIcon />
-                <span className="hidden sm:inline">Recent</span>
+                <span>Recent</span>
               </button>
               <button onClick={() => handleNavClick('library')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'library' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                 <LibraryIcon />
-                <span className="hidden sm:inline">Library</span>
+                <span>Library</span>
               </button>
                <button onClick={() => handleNavClick('design-systems')} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === 'design-systems' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                 <DesignSystemIcon />
-                <span className="hidden sm:inline">Design Systems</span>
+                <span>Design Systems</span>
               </button>
 
               <div className="w-px h-5 bg-gray-200 mx-2"></div>
@@ -586,6 +651,14 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* Mobile Top Header (Minimal) */}
+      <div className="md:hidden h-14 flex items-center justify-center border-b border-gray-100 bg-white/80 backdrop-blur-md z-50 shrink-0 sticky top-0">
+          <div className="flex items-center gap-2" onClick={() => navigateTo('home')}>
+              <img src="https://iili.io/f8yBZN9.png" alt="Kindly Create" className="w-8 h-8 object-contain" />
+              <span className="font-bold text-base text-gray-900 tracking-tight">Kindly Create</span>
+          </div>
+      </div>
+
       {/* Login Modal */}
       {showLoginModal && (
           <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
@@ -634,8 +707,8 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <div className={`flex-1 overflow-hidden relative ${isFloatingLayout ? 'px-4 pb-4 md:px-6 md:pb-6' : ''}`}>
-         <div className={`w-full h-full bg-white overflow-hidden relative ${isFloatingLayout ? 'squircle-box shadow-sm border border-gray-200' : ''}`}>
+      <div className={`flex-1 overflow-hidden relative ${isFloatingLayout ? 'px-0 pb-20 md:px-6 md:pb-6' : ''}`}>
+         <div className={`w-full h-full bg-white overflow-hidden relative ${isFloatingLayout ? 'md:squircle-box md:shadow-sm md:border border-gray-200' : ''}`}>
              {currentView === 'home' && (
                  <HomeView 
                    onSubmit={handleInitialSubmit} 
@@ -686,7 +759,7 @@ const App: React.FC = () => {
 
              {currentView === 'library' && (
                 <div className="w-full h-full flex flex-col md:flex-row">
-                   <div className="hidden md:block h-full border-r border-gray-100">
+                   <div className={`${isMobile ? 'w-full' : 'hidden md:block h-full border-r border-gray-100'}`}>
                       {isAskKindlyActive ? (
                             <AskKindlyPanel 
                                 currentPrompt={activeItem?.systemPrompt || ""} 
@@ -697,21 +770,27 @@ const App: React.FC = () => {
                           <Sidebar 
                             items={COMPONENT_ITEMS} 
                             selectedId={selectedId} 
-                            onSelect={(id) => { setSelectedId(id); setCustomizedItem(null); }} 
+                            onSelect={(id) => { 
+                                setSelectedId(id); 
+                                setCustomizedItem(null);
+                                if (isMobile) navigateTo('editor'); 
+                            }} 
                           />
                       )}
                    </div>
-                   <PreviewArea 
-                        item={activeItem} 
-                        onToggleAskKindly={() => setIsAskKindlyActive(!isAskKindlyActive)}
-                        isAskKindlyActive={isAskKindlyActive}
-                   />
+                   <div className="hidden md:block flex-1 h-full">
+                       <PreviewArea 
+                            item={activeItem} 
+                            onToggleAskKindly={() => setIsAskKindlyActive(!isAskKindlyActive)}
+                            isAskKindlyActive={isAskKindlyActive}
+                       />
+                   </div>
                 </div>
              )}
 
               {currentView === 'design-systems' && (
                 <div className="w-full h-full flex flex-col md:flex-row">
-                   <div className="hidden md:block h-full border-r border-gray-100">
+                   <div className={`${isMobile ? 'w-full' : 'hidden md:block h-full border-r border-gray-100'}`}>
                       {isAskKindlyActive ? (
                             <AskKindlyPanel 
                                 currentPrompt={activeItem?.systemPrompt || ""} 
@@ -722,15 +801,21 @@ const App: React.FC = () => {
                           <Sidebar 
                             items={DESIGN_SYSTEMS} 
                             selectedId={selectedId} 
-                            onSelect={(id) => { setSelectedId(id); setCustomizedItem(null); }} 
+                            onSelect={(id) => { 
+                                setSelectedId(id); 
+                                setCustomizedItem(null); 
+                                if (isMobile) navigateTo('editor');
+                            }} 
                           />
                       )}
                    </div>
-                   <PreviewArea 
-                        item={activeItem} 
-                        onToggleAskKindly={() => setIsAskKindlyActive(!isAskKindlyActive)}
-                        isAskKindlyActive={isAskKindlyActive}
-                   />
+                   <div className="hidden md:block flex-1 h-full">
+                       <PreviewArea 
+                            item={activeItem} 
+                            onToggleAskKindly={() => setIsAskKindlyActive(!isAskKindlyActive)}
+                            isAskKindlyActive={isAskKindlyActive}
+                       />
+                   </div>
                 </div>
              )}
              
@@ -751,6 +836,8 @@ const App: React.FC = () => {
              )}
          </div>
       </div>
+
+      <MobileNav />
     </div>
   );
 };

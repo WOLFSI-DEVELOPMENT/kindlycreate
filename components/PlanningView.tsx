@@ -175,7 +175,7 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
         const fullPrompt = `${SYSTEM_INSTRUCTION}\n\nCONVERSATION HISTORY:\n${conversation}\n\nAI ASSISTANT RESPONSE:`;
 
         const encoded = encodeURIComponent(fullPrompt);
-        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=openai`);
+        const response = await fetch(`https://text.pollinations.ai/${encoded}?model=glm`);
 
         if (!response.ok) throw new Error("Magic Prompt API failed");
         const text = await response.text();
@@ -257,7 +257,7 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
         </div>
 
         {/* Input */}
-        <div className="absolute bottom-6 left-0 right-0 px-6 pointer-events-none">
+        <div className="absolute bottom-6 md:bottom-6 left-0 right-0 px-6 pointer-events-none z-10">
             <div className="max-w-3xl mx-auto bg-white border border-gray-200 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] flex items-center pl-4 pr-1 pointer-events-auto transition-all focus-within:ring-4 focus-within:ring-gray-100 h-14">
                  <textarea
                     value={inputValue}

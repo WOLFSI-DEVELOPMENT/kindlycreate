@@ -17,52 +17,6 @@ const TYPING_PHRASES = [
   "export code."
 ];
 
-// --- ICONS ---
-const ChatGPTIcon = () => (
-    <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-        <path fillRule="evenodd" clipRule="evenodd" d="M474.123 209.81c11.525-34.577 7.569-72.423-10.838-103.904-27.696-48.168-83.433-72.94-137.794-61.414a127.14 127.14 0 00-95.475-42.49c-55.564 0-104.936 35.781-122.139 88.593-35.781 7.397-66.574 29.76-84.637 61.414-27.868 48.167-21.503 108.72 15.826 150.007-11.525 34.578-7.569 72.424 10.838 103.733 27.696 48.34 83.433 73.111 137.966 61.585 24.084 27.18 58.833 42.835 95.303 42.663 55.564 0 104.936-35.782 122.139-88.594 35.782-7.397 66.574-29.76 84.465-61.413 28.04-48.168 21.676-108.722-15.654-150.008v-.172zm-39.567-87.218c11.01 19.267 15.139 41.803 11.354 63.65-.688-.516-2.064-1.204-2.924-1.72l-101.152-58.49a16.965 16.965 0 00-16.687 0L206.621 194.5v-50.232l97.883-56.597c45.587-26.32 103.732-10.666 130.052 34.921zm-227.935 104.42l49.888-28.9 49.887 28.9v57.63l-49.887 28.9-49.888-28.9v-57.63zm23.223-191.81c22.364 0 43.867 7.742 61.07 22.02-.688.344-2.064 1.204-3.097 1.72L186.666 117.26c-5.161 2.925-8.258 8.43-8.258 14.45v136.934l-43.523-25.116V130.333c0-52.64 42.491-95.13 95.131-95.302l-.172.172zM52.14 168.697c11.182-19.268 28.557-34.062 49.544-41.803V247.14c0 6.02 3.097 11.354 8.258 14.45l118.354 68.295-43.695 25.288-97.711-56.425c-45.415-26.32-61.07-84.465-34.75-130.052zm26.665 220.71c-11.182-19.095-15.139-41.802-11.354-63.65.688.516 2.064 1.204 2.924 1.72l101.152 58.49a16.965 16.965 0 0016.687 0l118.354-68.467v50.232l-97.883 56.425c-45.587 26.148-103.732 10.665-130.052-34.75h.172zm204.54 87.39c-22.192 0-43.867-7.741-60.898-22.02a62.439 62.439 0 003.097-1.72l101.152-58.317c5.16-2.924 8.429-8.43 8.257-14.45V243.527l43.523 25.116v113.022c0 52.64-42.663 95.303-95.131 95.303v-.172zM461.22 343.303c-11.182 19.267-28.729 34.061-49.544 41.63V264.687c0-6.021-3.097-11.526-8.257-14.45L284.893 181.77l43.523-25.116 97.883 56.424c45.587 26.32 61.07 84.466 34.75 130.053l.172.172z"/>
-    </svg>
-);
-
-const CursorIcon = () => (
-    <svg viewBox="0 0 512 512" width="16" height="16" fill="none">
-        <path d="M255.428 423l148.991-83.5L255.428 256l-148.99 83.5 148.99 83.5z" fill="currentColor" fillOpacity="0.8"/>
-        <path d="M255.428 89l-148.99 83.5v167l148.99-83.5V89z" fill="currentColor" fillOpacity="0.6"/>
-        <path d="M404.419 172.5L255.428 256l-148.99-83.5h297.981z" fill="currentColor"/>
-    </svg>
-);
-
-const BoltIcon = () => (
-    <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-        <path d="M276.124 373.905c-22.625 0-44.844-8.063-57.594-25.438l-4.5 20.469-83.031 43.312 8.969-43.312 60.468-269.187h74.031l-21.375 94.875c17.25-18.563 33.313-25.438 53.875-25.438 44.406 0 74.031 28.688 74.031 81.156 0 54.125-34.125 123.563-104.874 123.563zm28.374-108.219c0 25.031-18.093 44.031-41.562 44.031-13.156 0-25.062-4.844-32.875-13.344l11.5-49.656c8.625-8.468 18.5-13.312 30.031-13.312 17.688 0 32.906 12.906 32.906 32.281z" />
-    </svg>
-);
-
-const V0Icon = () => (
-    <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-        <path d="M304.043 176h119.979c1.877 0 3.754.128 5.546.384L304.341 301.611a38.55 38.55 0 01-.405-5.654V176h-48V295.98c0 48.256 39.723 87.979 87.979 87.979h120v-48H343.936c-1.92 0-3.818-.128-5.653-.384L463.595 210.24a40.03 40.03 0 01.427 5.76v119.958H512v-119.98C512 167.724 472.278 128 424.022 128h-119.98v48zM0 160v.128l163.968 208.81c19.712 25.089 60.01 11.158 60.01-20.756V160H176v146.56L60.928 160H0z"/>
-    </svg>
-);
-
-const LovableIcon = () => (
-    <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-        <path fillRule="evenodd" clipRule="evenodd" d="M151.083 0c83.413 0 151.061 67.819 151.061 151.467v57.6h50.283c83.413 0 151.082 67.797 151.082 151.466 0 83.691-67.626 151.467-151.082 151.467H0V151.467C0 67.84 67.627 0 151.083 0z"/>
-    </svg>
-);
-
-const AIStudioIcon = () => (
-    <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-        <path fillRule="evenodd" clipRule="evenodd" d="M211.648 89.515h-76.651A57.707 57.707 0 0077.291 147.2v242.389a57.707 57.707 0 0057.706 57.707h242.411a57.707 57.707 0 0057.707-57.707V288.128l34.624-23.744v125.227a92.35 92.35 0 01-92.331 92.33H134.997a92.349 92.349 0 01-92.33-92.33v-242.39A92.336 92.336 0 0169.702 81.92a92.33 92.33 0 0165.295-27.05h96.96l-20.309 34.645zM380.16 0c3.093 0 5.717 2.219 6.379 5.248a149.328 149.328 0 0040.533 74.325 149.332 149.332 0 0074.347 40.555c3.029.661 5.248 3.285 5.248 6.4a6.574 6.574 0 01-5.248 6.357 149.338 149.338 0 00-74.326 40.555 149.338 149.338 0 00-40.789 75.413 6.334 6.334 0 01-6.144 5.078 6.334 6.334 0 01-6.144-5.078 149.338 149.338 0 00-40.789-75.413 149.326 149.326 0 00-75.414-40.789 6.338 6.338 0 01-5.077-6.144c0-2.987 2.133-5.547 5.077-6.144a149.336 149.336 0 0075.414-40.79 149.354 149.354 0 0040.554-74.325A6.573 6.573 0 01380.16 0z"/>
-    </svg>
-);
-
-const GrokIcon = () => (
-    <svg viewBox="0 0 512 509.641" width="16" height="16" fill="currentColor">
-       <path d="M115.612 0h280.776C459.975 0 512 52.026 512 115.612v278.416c0 63.587-52.025 115.613-115.612 115.613H115.612C52.026 509.641 0 457.615 0 394.028V115.612C0 52.026 52.026 0 115.612 0z"/>
-       <path fill="#fff" d="M213.235 306.019l178.976-180.002v.169l51.695-51.763c-.924 1.32-1.86 2.605-2.785 3.89-39.281 54.164-58.46 80.649-43.07 146.922l-.09-.101c10.61 45.11-.744 95.137-37.398 131.836-46.216 46.306-120.167 56.611-181.063 14.928l42.462-19.675c38.863 15.278 81.392 8.57 111.947-22.03 30.566-30.6 37.432-75.159 22.065-112.252-2.92-7.025-11.67-8.795-17.792-4.263l-124.947 92.341zm-25.786 22.437l-.033.034L68.094 435.217c7.565-10.429 16.957-20.294 26.327-30.149 26.428-27.803 52.653-55.359 36.654-94.302-21.422-52.112-8.952-113.177 30.724-152.898 41.243-41.254 101.98-51.661 152.706-30.758 11.23 4.172 21.016 10.114 28.638 15.639l-42.359 19.584c-39.44-16.563-84.629-5.299-112.207 22.313-37.298 37.308-44.84 102.003-1.128 143.81z"/>
-    </svg>
-);
-
 // ... (classifyIntent function remains the same)
 const classifyIntent = (input: string) => {
     const text = input.toLowerCase();
@@ -252,12 +206,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
       onSubmit(finalPrompt, generationMode);
   };
 
-  const handleExport = (urlTemplate: string) => {
-      if (!inputValue.trim()) return;
-      const url = urlTemplate.replace(/\{YOUR_PROMPT(_HERE)?\}/g, encodeURIComponent(inputValue));
-      window.open(url, '_blank');
-  };
-
   const getModeLabel = () => {
       if (generationMode === 'prompt') return 'Prompt Generator';
       if (generationMode === 'prototype') return 'Prototype';
@@ -287,7 +235,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
       {/* --- HERO SECTION --- */}
       <div className="flex flex-col items-center justify-center min-h-[85vh] relative pt-10">
           
-          {/* Hero Background Image - Modified for specific curved bottom edge only */}
+          {/* Hero Background Image - Isolated Stacking Context with Hidden Overflow */}
+          {/* Curved bottom edge only using rounded-b-[40px] */}
           <div className="absolute inset-x-0 top-0 bottom-0 z-0 overflow-hidden pointer-events-none rounded-b-[40px]">
               <img 
                   src="https://iili.io/fS3NdIs.md.jpg" 
@@ -313,7 +262,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
               </span>
             </div>
             
-            {/* Input Container (Modified structure for connected footer) */}
+            {/* Input Container */}
             <div className="w-full max-w-3xl bg-white/90 backdrop-blur-sm border border-gray-200 squircle-box shadow-[0_8px_40px_-10px_rgba(0,0,0,0.1)] flex flex-col relative group focus-within:ring-2 focus-within:ring-blue-100 transition-all z-20">
                 
                 {/* Main Input Area */}
@@ -477,20 +426,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                             </button>
                         </div>
                     </div>
-                </div>
-
-                {/* Connected Export Tools Bar */}
-                <div className="bg-gray-50 border-t border-gray-100 py-3 px-5 flex items-center justify-between backdrop-blur-md rounded-b-[20px]">
-                   <span className="text-xs font-semibold text-gray-500">Export prompts to</span>
-                   <div className="flex items-center gap-4 text-gray-400">
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="ChatGPT" onClick={() => handleExport('https://chatgpt.com/?q={YOUR_PROMPT_HERE}')}><ChatGPTIcon /></div>
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="Cursor" onClick={() => handleExport('cursor://link/prompt?text={YOUR_PROMPT}')}><CursorIcon /></div>
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="Bolt" onClick={() => handleExport('https://bolt.new/?prompt={YOUR_PROMPT}')}><BoltIcon /></div>
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="v0" onClick={() => handleExport('https://v0.dev/?q={YOUR_PROMPT}')}><V0Icon /></div>
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="Lovable" onClick={() => handleExport('https://lovable.dev/?autosubmit=true#prompt={YOUR_PROMPT_HERE}')}><LovableIcon /></div>
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="Google AI Studio" onClick={() => handleExport('https://aistudio.google.com/apps?autosubmit=true&prompt={YOUR_PROMPT}')}><AIStudioIcon /></div>
-                      <div className="hover:text-gray-900 transition-colors cursor-pointer" title="Grok" onClick={() => handleExport('https://grok.com/?q={YOUR_PROMPT_HERE}')}><GrokIcon /></div>
-                   </div>
                 </div>
             </div>
             
