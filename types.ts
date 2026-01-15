@@ -1,5 +1,3 @@
-
-
 export interface ComponentItem {
   id: string;
   title: string;
@@ -13,6 +11,13 @@ export interface ComponentItem {
   code?: string; // Optional field for generated HTML code
   createdAt?: number; // Timestamp for recent items
   type?: 'prompt' | 'prototype' | 'image'; // Type of creation
+  tokens?: any; // For design systems
+}
+
+export interface User {
+  name: string;
+  email: string;
+  picture: string;
 }
 
 export interface SidebarProps {
