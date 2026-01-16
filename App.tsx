@@ -16,7 +16,7 @@ import { AskKindlyPanel } from './components/AskKindlyPanel';
 import { ProfileView } from './components/ProfileView';
 import { COMPONENT_ITEMS, DESIGN_SYSTEMS } from './constants';
 import { ComponentItem, User } from './types';
-import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, CheckCircle2, Sparkles, Home, Menu, LayoutGrid, Plus, Mail, Phone, ArrowLeft, Loader2 } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, CheckCircle2, Sparkles, Home, Menu, LayoutGrid, Plus, Mail, Phone, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { 
   auth, 
   googleProvider, 
@@ -60,11 +60,15 @@ const DesignSystemIcon = () => (
 
 type ViewState = 'home' | 'planning' | 'building' | 'dynamic-building' | 'editor' | 'library' | 'design-systems' | 'gallery' | 'privacy' | 'terms' | 'docs' | 'settings' | 'ask-kindly' | 'profile' | 'public-profile';
 
-// ... (Keep existing constants: ai, generateMagicPrompt) ...
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to get AI instance with dynamic key
+const getAI = () => {
+  const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
+  return new GoogleGenAI({ apiKey });
+};
 
 const generateMagicPrompt = async (prompt: string) => {
     try {
+        const ai = getAI();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt,
@@ -127,6 +131,7 @@ const App: React.FC = () => {
   const [authMode, setAuthMode] = useState<'main' | 'email-in' | 'email-up' | 'phone'>('main');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [loginMessage, setLoginMessage] = useState<string>(''); // For the "Oh no" message
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -144,6 +149,16 @@ const App: React.FC = () => {
         console.warn("Failed to save gallery items to local storage (likely quota exceeded).", e);
       }
   }, [galleryItems]);
+
+  // Auth Guard Helper
+  const requireAuth = (action: () => void, message: string = "You must be logged in to use this feature.") => {
+      if (user) {
+          action();
+      } else {
+          setLoginMessage(message);
+          setShowLoginModal(true);
+      }
+  };
 
   // --- ROUTING LOGIC ---
   useEffect(() => {
@@ -215,7 +230,7 @@ const App: React.FC = () => {
       }
   };
 
-  // ... (Keep all Auth Logic: handleFirebaseLogin, handleEmailAuth, etc.) ...
+  // ... (Keep all Auth Logic) ...
   useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
           if (firebaseUser) {
@@ -240,6 +255,7 @@ const App: React.FC = () => {
   const resetAuthForm = () => {
       setAuthMode('main');
       setAuthError('');
+      setLoginMessage('');
       setEmail('');
       setPassword('');
       setPhoneNumber('');
@@ -437,10 +453,13 @@ const App: React.FC = () => {
   };
 
   const handleInitialSubmit = (prompt: string, mode: 'prompt' | 'prototype' | 'image' | 'dynamic') => {
-    setInitialPrompt(prompt);
-    setCreationMode(mode);
-    if (mode === 'dynamic') navigateTo('dynamic-building');
-    else navigateTo('planning');
+    // Require Auth Check
+    requireAuth(() => {
+        setInitialPrompt(prompt);
+        setCreationMode(mode);
+        if (mode === 'dynamic') navigateTo('dynamic-building');
+        else navigateTo('planning');
+    }, "Oh no! You need to log in to use the AI generator.");
   };
 
   const handleDynamicBuildComplete = (item: ComponentItem) => {
@@ -516,6 +535,10 @@ const App: React.FC = () => {
   };
   
   const handleNavClick = (view: 'library' | 'design-systems' | 'gallery' | 'ask-kindly') => {
+      if (view === 'gallery' && !user) {
+          requireAuth(() => {}, "Oh no! Log in to access your gallery.");
+          return;
+      }
       navigateTo(view as ViewState);
       if (view === 'design-systems') setSelectedId('ds-classic');
       else if (view === 'library') setSelectedId('radiant-input');
@@ -596,7 +619,7 @@ const App: React.FC = () => {
                   <div className="w-px h-5 bg-gray-200 mx-3"></div>
 
                   {!user ? (
-                      <button onClick={() => setShowLoginModal(true)} className="pr-4 pl-1 text-sm font-bold text-gray-900 hover:text-gray-600 transition-colors">Sign In</button>
+                      <button onClick={() => { setLoginMessage(''); setShowLoginModal(true); }} className="pr-4 pl-1 text-sm font-bold text-gray-900 hover:text-gray-600 transition-colors">Sign In</button>
                   ) : (
                       <div className="relative" ref={userMenuRef}>
                           <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 pr-3">
@@ -631,7 +654,7 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      {/* Login Modal (Keep existing) */}
+      {/* Login Modal */}
       {showLoginModal && (
           <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white rounded-[32px] p-8 w-full max-w-md shadow-2xl relative overflow-hidden animate-fade-in-up">
@@ -645,6 +668,14 @@ const App: React.FC = () => {
                       </div>
                   ) : (
                       <>
+                        {/* Oh No Message */}
+                        {loginMessage && (
+                            <div className="bg-red-50 text-red-600 p-4 rounded-2xl mb-6 flex items-start gap-3 border border-red-100 animate-fade-in">
+                                <AlertCircle size={20} className="shrink-0 mt-0.5" />
+                                <span className="text-sm font-medium">{loginMessage}</span>
+                            </div>
+                        )}
+
                         {authMode === 'main' && (
                             <>
                                 <div className="text-center mb-8">
@@ -739,7 +770,7 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <div className={`flex-1 overflow-hidden relative ${isFloatingLayout ? 'p-3 pb-24 md:px-6 md:pb-6' : ''}`}>
          <div className={`w-full h-full bg-white overflow-hidden relative shadow-sm border border-gray-200 squircle-3xl`}>
-             {currentView === 'home' && <HomeView onSubmit={handleInitialSubmit} onNavigate={(view) => navigateTo(view as ViewState)} />}
+             {currentView === 'home' && <HomeView onSubmit={handleInitialSubmit} onNavigate={(view) => navigateTo(view as ViewState)} user={user} />}
              {currentView === 'planning' && <PlanningView initialPrompt={initialPrompt} onBuild={handlePlanningBuild} creationMode={creationMode as any} />}
              {currentView === 'building' && <BuildingView onStop={handleStopGeneration} />}
              {currentView === 'dynamic-building' && <DynamicBuilderView initialPrompt={initialPrompt} onComplete={handleDynamicBuildComplete} />}
@@ -749,7 +780,7 @@ const App: React.FC = () => {
                  <div className="w-full h-full flex flex-col md:flex-row">
                     {isAskKindlyActive && (
                         <div className="hidden md:block h-full border-r border-gray-100 flex-shrink-0">
-                            <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} />
+                            <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} user={user} requireAuth={requireAuth} />
                         </div>
                     )}
                     <PreviewArea item={activeItem} onToggleAskKindly={() => setIsAskKindlyActive(!isAskKindlyActive)} isAskKindlyActive={isAskKindlyActive} />
@@ -768,6 +799,8 @@ const App: React.FC = () => {
                             onClose={() => navigateTo('home')}
                             onGenerateCanvas={handleStudioGeneration}
                             isStudioMode={true}
+                            user={user}
+                            requireAuth={requireAuth}
                         />
                     </div>
                     <div className="flex-1 h-full">
@@ -811,7 +844,7 @@ const App: React.FC = () => {
                 <div className="w-full h-full flex flex-col md:flex-row">
                    <div className={`${isMobile ? 'w-full' : 'hidden md:block h-full border-r border-gray-100'}`}>
                       {isAskKindlyActive ? (
-                            <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} />
+                            <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} user={user} requireAuth={requireAuth} />
                       ) : (
                           <Sidebar 
                             items={COMPONENT_ITEMS} 
@@ -831,7 +864,7 @@ const App: React.FC = () => {
                 <div className="w-full h-full flex flex-col md:flex-row">
                    <div className={`${isMobile ? 'w-full' : 'hidden md:block h-full border-r border-gray-100'}`}>
                       {isAskKindlyActive ? (
-                            <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} />
+                            <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} user={user} requireAuth={requireAuth} />
                       ) : (
                           <Sidebar items={DESIGN_SYSTEMS} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); setCustomizedItem(null); if (isMobile) navigateTo('editor'); }} />
                       )}

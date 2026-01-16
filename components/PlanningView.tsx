@@ -16,7 +16,10 @@ interface PlanningViewProps {
   creationMode?: 'prompt' | 'prototype' | 'image';
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+  const apiKey = localStorage.getItem('kindly_api_key') || process.env.API_KEY;
+  return new GoogleGenAI({ apiKey });
+};
 
 const SYSTEM_INSTRUCTION = `You are a professional UI/UX Architect.
 Your goal is to prepare a detailed plan for a UI component.
@@ -175,6 +178,7 @@ export const PlanningView: React.FC<PlanningViewProps> = ({ initialPrompt, onBui
         const conversation = history.concat({ role: 'user', text: prompt })
             .map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
         
+        const ai = getAI();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `CONVERSATION HISTORY:\n${conversation}\n\nUSER PROMPT: ${prompt}`,

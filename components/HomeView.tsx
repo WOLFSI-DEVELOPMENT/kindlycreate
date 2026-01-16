@@ -3,12 +3,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, ArrowUp, Plus, Sparkles, ChevronDown, Check, X, FileCode, MessageSquare, Image as ImageIcon, ArrowRight, Zap, Loader2, Heart, GripVertical, LayoutTemplate } from 'lucide-react';
 import { DESIGN_SYSTEMS } from '../constants';
 import { useDeepgram } from '../hooks/useDeepgram';
+import { User } from '../types';
 
 interface HomeViewProps {
   onSubmit: (prompt: string, mode: 'prompt' | 'prototype' | 'image' | 'dynamic') => void;
   onNavigate: (view: 'privacy' | 'terms' | 'docs') => void;
+  user?: User | null;
 }
 
+// ... (keep existing TYPING_PHRASES and classifyIntent) ...
 const TYPING_PHRASES = [
   "generate AI apps.",
   "build complex UIs.",
@@ -17,7 +20,6 @@ const TYPING_PHRASES = [
   "export code."
 ];
 
-// ... (classifyIntent function remains the same)
 const classifyIntent = (input: string) => {
     const text = input.toLowerCase();
     
@@ -77,7 +79,7 @@ const classifyIntent = (input: string) => {
     return { mode: detectedMode, designSystemId: detectedDsId };
 };
 
-// --- COMPARISON SECTION COMPONENT ---
+// ... (Keep ComparisonSection) ...
 const ComparisonSection = () => {
   const [sliderPosition, setSliderPosition] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -248,7 +250,7 @@ const ComparisonSection = () => {
   );
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate, user }) => {
   const [inputValue, setInputValue] = useState('');
   const [generationMode, setGenerationMode] = useState<'prompt' | 'prototype' | 'image' | 'dynamic'>('prompt');
   
@@ -612,6 +614,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
           </div>
       </div>
 
+      {/* ... (Keep existing Marketing Sections) ... */}
       <div className="w-full bg-white py-24 border-t border-gray-100">
           <div className="max-w-4xl mx-auto px-6">
               
