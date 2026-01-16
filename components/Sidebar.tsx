@@ -5,7 +5,7 @@ import { SidebarProps, ComponentItem } from '../types';
 import { db } from '../firebase';
 import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-export const Sidebar: React.FC<SidebarProps> = ({ items, selectedId, onSelect }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ items, selectedId, onSelect, onNavigateToProfile }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'curated' | 'community'>('curated');
   const [communityItems, setCommunityItems] = useState<ComponentItem[]>([]);
@@ -139,7 +139,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ items, selectedId, onSelect })
                 >
                 {/* Thumbnail Placeholder */}
                 <div className={`w-20 h-16 squircle-sm flex-shrink-0 ${item.thumbnailClass} ${isSelected ? 'ring-2 ring-gray-200' : ''} flex items-center justify-center overflow-hidden bg-gray-100 text-gray-400`}>
-                    {activeTab === 'community' ? <Globe size={20} opacity={0.5} /> : <div className="w-12 h-2 bg-black/5 rounded-full"></div>}
+                    {activeTab === 'community' ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center">
+                            <Globe size={16} className="mb-1 opacity-50" />
+                            {item.isPaid && <span className="text-[10px] bg-black text-white px-1.5 rounded-sm font-bold">${item.price}</span>}
+                        </div>
+                    ) : (
+                        <div className="w-12 h-2 bg-black/5 rounded-full"></div>
+                    )}
                 </div>
 
                 {/* Content */}
@@ -151,7 +158,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ items, selectedId, onSelect })
                     {/* Stats */}
                     <div className="flex items-center gap-3 text-xs text-gray-400 mt-1 mb-1.5">
                         {activeTab === 'community' && (item as any).authorName ? (
-                            <div className="flex items-center gap-1 text-blue-500 font-medium truncate max-w-[100px]">
+                            <div 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if(onNavigateToProfile && item.authorId) onNavigateToProfile(item.authorId, item.authorName || 'User');
+                                }}
+                                className="flex items-center gap-1 text-blue-500 font-medium truncate max-w-[100px] hover:underline cursor-pointer"
+                            >
                                 <User size={10} />
                                 <span className="truncate">{(item as any).authorName}</span>
                             </div>

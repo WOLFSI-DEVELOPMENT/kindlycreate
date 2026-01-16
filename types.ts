@@ -15,18 +15,30 @@ export interface ComponentItem {
   parentId?: string | null; // For folder structure
   content?: string; // For file content
   tokens?: any; // For design systems
+  
+  // Community & Commerce Fields
+  authorId?: string;
+  authorName?: string;
+  authorPhoto?: string;
+  isPaid?: boolean;
+  price?: string;
+  contactEmail?: string;
+  portfolioUrl?: string;
+  publishedAt?: number;
 }
 
 export interface User {
   name: string;
   email: string;
   picture: string;
+  uid?: string;
 }
 
 export interface SidebarProps {
   items: ComponentItem[];
   selectedId: string;
   onSelect: (id: string) => void;
+  onNavigateToProfile?: (authorId: string, authorName: string) => void;
 }
 
 export interface PreviewAreaProps {

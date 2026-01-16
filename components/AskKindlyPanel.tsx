@@ -6,6 +6,8 @@ import { InteractiveAvatar } from './InteractiveAvatar';
 import { useDeepgram } from '../hooks/useDeepgram';
 import { COMPONENT_ITEMS } from '../constants';
 import { ComponentItem } from '../types';
+import { db } from '../firebase';
+import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 interface AskKindlyPanelProps {
   activeItem?: ComponentItem;
@@ -386,12 +388,55 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isGenerating]);
 
-  const performSearch = (query: string) => {
-      const terms = query.toLowerCase().split(/\s+/);
-      return COMPONENT_ITEMS.filter(item => {
+  // Combined Search Function (Local + Community)
+  const performSearch = async (queryStr: string) => {
+      const terms = queryStr.toLowerCase().split(/\s+/).filter(Boolean);
+      if (terms.length === 0) return [];
+
+      // 1. Local Search (Curated)
+      const localResults = COMPONENT_ITEMS.filter(item => {
           const text = (item.title + item.description).toLowerCase();
           return terms.some(term => text.includes(term));
-      }).slice(0, 3); // Top 3 results
+      });
+
+      // 2. Community Search (Firestore)
+      let communityResults: ComponentItem[] = [];
+      try {
+          // Fetch latest 50 for client-side filtering (MVP approach)
+          const q = query(collection(db, "community_prompts"), orderBy("publishedAt", "desc"), limit(50));
+          const querySnapshot = await getDocs(q);
+          const fetchedItems: ComponentItem[] = [];
+          
+          querySnapshot.forEach((doc) => {
+             const data = doc.data();
+             fetchedItems.push({ 
+                 id: doc.id, 
+                 ...data,
+                 // Ensure fields match types
+                 title: data.title || "Untitled",
+                 description: data.description || "",
+                 category: data.category || 'UI Component',
+                 thumbnailClass: data.thumbnailClass || 'bg-gray-100',
+                 systemPrompt: data.systemPrompt || '',
+             } as ComponentItem);
+          });
+          
+          communityResults = fetchedItems.filter(item => {
+              const text = (item.title + (item.description || "")).toLowerCase();
+              return terms.some(term => text.includes(term));
+          });
+      } catch (error) {
+          console.error("Error searching community:", error);
+      }
+
+      // Combine: Local first, then Community.
+      const combined = [...localResults, ...communityResults];
+      
+      // Deduplicate by ID
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+      
+      // Return top 4
+      return unique.slice(0, 4);
   };
 
   const handleSend = async (textOverride?: string) => {
@@ -411,12 +456,12 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
       USER REQUEST: "${textToSend}"`;
 
       const systemInstruction = `You are Kindly 3.0, an advanced AI architect.
-      You have access to a UI library, an export tool, a canvas builder, and Design System editing capabilities.
+      You have access to a UI library (Curated & Community), an export tool, a canvas builder, and Design System editing capabilities.
       
       Identify the user's intent and return a JSON object with the "type".
       
       INTENTS:
-      1. SEARCH: User wants to find/search/look for existing prompts or components in the library.
+      1. SEARCH: User wants to find/search/look for existing prompts or components in the library (both local and community).
          Return: { "type": "search", "query": "search terms", "text": "Here are some components I found:" }
       
       2. BUILD/CANVAS: User wants to generate/create/build a prototype, canvas, or code for a NEW app idea. 
@@ -450,8 +495,10 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
 
       if (data.type === 'search') {
           newMsg.type = 'search_result';
-          newMsg.payload = performSearch(data.query);
-          if (newMsg.payload.length === 0) newMsg.text = `I couldn't find anything matching "${data.query}" in the library.`;
+          const results = await performSearch(data.query); // Async search
+          newMsg.payload = results;
+          if (newMsg.payload.length === 0) newMsg.text = `I couldn't find anything matching "${data.query}" in the curated or community library.`;
+          else newMsg.text = `Found ${newMsg.payload.length} results in the library:`;
           setMessages(prev => [...prev, newMsg]);
       } else if (data.type === 'canvas') {
           // Automatic Generation Logic
