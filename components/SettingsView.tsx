@@ -1,12 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Key, FileJson, Save, Download, Upload, Trash2, CheckCircle2, BrainCircuit, Paperclip, File as FileIcon, X } from 'lucide-react';
+import { 
+  ArrowLeft, Key, FileJson, Save, Download, Upload, 
+  Trash2, CheckCircle2, BrainCircuit, File as FileIcon, X, 
+  Settings, Database, Plus
+} from 'lucide-react';
 
 interface SettingsViewProps {
   onBack: () => void;
 }
 
+type SettingsTab = 'general' | 'knowledge' | 'data';
+
 export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  
+  // State
   const [apiKey, setApiKey] = useState('');
   const [instructions, setInstructions] = useState('');
   const [knowledgeCode, setKnowledgeCode] = useState('');
@@ -14,8 +23,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Load Data
   useEffect(() => {
-    // Load from local storage on mount
     const storedKey = localStorage.getItem('kindly_api_key') || '';
     const storedInstr = localStorage.getItem('kindly_custom_instructions') || '';
     const storedKnowledge = localStorage.getItem('kindly_knowledge_code') || '';
@@ -27,6 +36,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     setUploadedFiles(storedFiles);
   }, []);
 
+  // Save Data
   const handleSave = () => {
     localStorage.setItem('kindly_api_key', apiKey);
     localStorage.setItem('kindly_custom_instructions', instructions);
@@ -37,16 +47,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     setTimeout(() => setSaveStatus('idle'), 2000);
   };
 
+  // Handlers
   const handleKnowledgeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files) return;
-
       const newFiles = Array.from(files).map((f: File) => ({ name: f.name, size: f.size }));
-      const updatedList = [...uploadedFiles, ...newFiles];
-      setUploadedFiles(updatedList);
-      
-      // Simulate storage of content (In real app, upload to vector DB)
-      localStorage.setItem('kindly_knowledge_files', JSON.stringify(updatedList));
+      setUploadedFiles(prev => [...prev, ...newFiles]);
   };
 
   const removeFile = (index: number) => {
@@ -61,7 +67,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
       instructions,
       knowledgeCode,
       knowledgeFiles: uploadedFiles,
-      recents: JSON.parse(localStorage.getItem('kindly_recent_items') || '[]'),
+      recents: JSON.parse(localStorage.getItem('kindly_gallery_items') || '[]'),
       timestamp: Date.now()
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -78,25 +84,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        
         if (data.apiKey) setApiKey(data.apiKey);
         if (data.instructions) setInstructions(data.instructions);
         if (data.knowledgeCode) setKnowledgeCode(data.knowledgeCode);
         if (data.knowledgeFiles) setUploadedFiles(data.knowledgeFiles);
-        
-        // Save immediately
         handleSave();
-        if (data.recents) localStorage.setItem('kindly_recent_items', JSON.stringify(data.recents));
-
         alert('Data imported successfully!');
       } catch (err) {
-        alert('Failed to import data. Invalid JSON file.');
+        alert('Failed to import data.');
       }
     };
     reader.readAsText(file);
@@ -105,196 +105,240 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const handleClearData = () => {
     if (confirm('Are you sure? This will clear all local settings, knowledge base, and gallery.')) {
       localStorage.clear();
-      setApiKey('');
-      setInstructions('');
-      setKnowledgeCode('');
-      setUploadedFiles([]);
       window.location.reload();
     }
   };
 
+  // Render Helpers
+  const TabButton = ({ id, label, icon: Icon }: { id: SettingsTab, label: string, icon: any }) => (
+    <button 
+        onClick={() => setActiveTab(id)}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+            activeTab === id 
+            ? 'bg-black text-white shadow-lg' 
+            : 'text-gray-500 hover:bg-gray-100'
+        }`}
+    >
+        <Icon size={18} />
+        <span>{label}</span>
+    </button>
+  );
+
   return (
-    <div className="w-full h-full overflow-y-auto bg-white font-sans">
-      <div className="max-w-4xl mx-auto px-6 py-12 pb-32">
-        <button 
-          onClick={onBack}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors mb-8"
-        >
-          <ArrowLeft size={20} />
-          <span className="font-medium">Back</span>
-        </button>
+    <div className="w-full h-full bg-[#F8F9FB] font-sans flex overflow-hidden">
+      
+      {/* --- Sidebar --- */}
+      <div className="w-64 flex-shrink-0 flex flex-col border-r border-gray-200 bg-white/50 backdrop-blur-sm p-6">
+          <button 
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors mb-8 px-2"
+          >
+            <ArrowLeft size={18} />
+            <span className="font-bold text-sm">Back</span>
+          </button>
 
-        <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Settings</h1>
-            {saveStatus === 'saved' && (
-                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1.5 rounded-full text-sm font-medium animate-fade-in">
-                    <CheckCircle2 size={16} />
-                    <span>Saved</span>
-                </div>
-            )}
-        </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-8 px-2 tracking-tight">Settings</h1>
 
-        <div className="space-y-10">
-            
-            {/* Knowledge Base Section */}
-            <section className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100 shadow-sm">
-                <div className="flex items-start gap-4 mb-6">
-                    <div className="p-3 bg-white rounded-xl shadow-sm text-indigo-600 border border-indigo-100">
-                        <BrainCircuit size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">Custom Knowledge Base</h2>
-                        <p className="text-gray-600 text-sm mt-1">
-                            Train the AI on your specific standards. Upload documentation, code snippets, or branding guidelines.
-                        </p>
-                    </div>
-                </div>
+          <div className="space-y-2 flex-1">
+              <TabButton id="general" label="General" icon={Settings} />
+              <TabButton id="knowledge" label="Knowledge Base" icon={BrainCircuit} />
+              <TabButton id="data" label="Data" icon={Database} />
+          </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Raw Code / Rules */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Custom Training Rules / Code</label>
-                        <textarea 
-                            value={knowledgeCode}
-                            onChange={(e) => setKnowledgeCode(e.target.value)}
-                            placeholder="// Paste your component library API, strict coding rules, or style guide json here..."
-                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-xs font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all min-h-[250px] resize-y"
-                        />
-                    </div>
+          <div className="mt-auto pt-6 border-t border-gray-100">
+             <div className="bg-blue-50 p-4 rounded-2xl">
+                 <p className="text-xs text-blue-600 font-medium mb-1">Status</p>
+                 <div className="flex items-center gap-2 text-sm font-bold text-blue-900">
+                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                     <span>Sync Active</span>
+                 </div>
+             </div>
+          </div>
+      </div>
 
-                    {/* File Uploads */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Knowledge Files</label>
-                        
-                        <div 
+      {/* --- Main Content Area --- */}
+      <div className="flex-1 overflow-y-auto p-8 md:p-12 relative">
+          
+          <div className="max-w-2xl mx-auto space-y-12 pb-24">
+              
+              {/* === GENERAL TAB === */}
+              {activeTab === 'general' && (
+                  <div className="space-y-10 animate-fade-in">
+                      <div>
+                          <h2 className="text-lg font-bold text-gray-900 mb-1">API Configuration</h2>
+                          <p className="text-sm text-gray-500 mb-6">Connect your Gemini API key for higher limits.</p>
+                          
+                          <div className="relative group">
+                              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                                  <Key size={18} />
+                              </div>
+                              <input 
+                                  type="password" 
+                                  value={apiKey}
+                                  onChange={(e) => setApiKey(e.target.value)}
+                                  placeholder="Paste your Google API Key here..."
+                                  className="w-full bg-white pl-12 pr-6 py-4 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-none outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-mono transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+                              />
+                          </div>
+                      </div>
+
+                      <div>
+                          <h2 className="text-lg font-bold text-gray-900 mb-1">System Instructions</h2>
+                          <p className="text-sm text-gray-500 mb-6">Global rules applied to every generation.</p>
+                          
+                          <div className="relative group">
+                              <div className="absolute left-5 top-6 text-gray-400">
+                                  <FileJson size={18} />
+                              </div>
+                              <textarea 
+                                  value={instructions}
+                                  onChange={(e) => setInstructions(e.target.value)}
+                                  placeholder="e.g. Always use TypeScript, prefer functional components, avoid using jQuery..."
+                                  className="w-full bg-white pl-12 pr-6 py-6 rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-none outline-none focus:ring-2 focus:ring-purple-500/20 text-sm min-h-[200px] resize-none transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] leading-relaxed"
+                              />
+                          </div>
+                      </div>
+                  </div>
+              )}
+
+              {/* === KNOWLEDGE BASE TAB === */}
+              {activeTab === 'knowledge' && (
+                  <div className="space-y-8 animate-fade-in">
+                      <div className="flex justify-between items-end">
+                          <div>
+                              <h2 className="text-lg font-bold text-gray-900 mb-1">Custom Knowledge</h2>
+                              <p className="text-sm text-gray-500">Train the AI on your specific coding standards.</p>
+                          </div>
+                          <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="border-2 border-dashed border-indigo-200 bg-white/50 hover:bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-indigo-400 group h-[120px]"
-                        >
-                            <Upload size={24} className="text-indigo-300 group-hover:text-indigo-500 mb-2 transition-colors" />
-                            <p className="text-sm font-medium text-gray-600">Click to upload files</p>
-                            <p className="text-[10px] text-gray-400">Support PDF, MD, TXT, ZIP (Unlimited)</p>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                multiple 
-                                className="hidden" 
-                                onChange={handleKnowledgeUpload} 
-                            />
-                        </div>
+                            className="bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-gray-800 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+                          >
+                              <Plus size={16} /> Upload Files
+                          </button>
+                      </div>
 
-                        {/* File List */}
-                        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-[120px] overflow-y-auto">
-                            {uploadedFiles.length === 0 ? (
-                                <div className="p-4 text-center text-xs text-gray-400 italic">No files uploaded</div>
-                            ) : (
-                                <div className="divide-y divide-gray-50">
-                                    {uploadedFiles.map((f, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 text-xs hover:bg-gray-50">
-                                            <div className="flex items-center gap-2 overflow-hidden">
-                                                <FileIcon size={14} className="text-gray-400 flex-shrink-0" />
-                                                <span className="truncate text-gray-700 font-medium">{f.name}</span>
-                                            </div>
-                                            <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500 transition-colors">
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </section>
+                      {/* File List - Floating Style */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {uploadedFiles.map((f, i) => (
+                              <div key={i} className="bg-white p-4 rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center justify-between group hover:shadow-[0_8px_25px_rgba(0,0,0,0.06)] transition-all">
+                                  <div className="flex items-center gap-3 overflow-hidden">
+                                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                                          <FileIcon size={18} />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-bold text-gray-900 truncate">{f.name}</p>
+                                          <p className="text-[10px] text-gray-400">{(f.size / 1024).toFixed(1)} KB</p>
+                                      </div>
+                                  </div>
+                                  <button onClick={() => removeFile(i)} className="text-gray-300 hover:text-red-500 transition-colors p-2">
+                                      <X size={16} />
+                                  </button>
+                              </div>
+                          ))}
+                          
+                          {/* Empty State */}
+                          {uploadedFiles.length === 0 && (
+                              <div 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="col-span-2 border-2 border-dashed border-gray-200 rounded-[24px] p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-gray-300 hover:bg-white/50 transition-all"
+                              >
+                                  <Upload size={24} className="text-gray-300 mb-2" />
+                                  <p className="text-sm font-medium text-gray-500">Drop files here or click to upload</p>
+                                  <p className="text-xs text-gray-400 mt-1">Supports PDF, MD, TXT</p>
+                              </div>
+                          )}
+                          <input type="file" ref={fileInputRef} multiple className="hidden" onChange={handleKnowledgeUpload} />
+                      </div>
 
-            {/* API Key Section */}
-            <section className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                <div className="flex items-start gap-4 mb-4">
-                    <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600 border border-gray-100">
-                        <Key size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-900">API Configuration</h2>
-                        <p className="text-gray-500 text-sm">Bring your own Gemini API key for higher rate limits.</p>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Gemini API Key</label>
-                    <input 
-                        type="password" 
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="AIzaSy..."
-                        className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
-                    />
-                </div>
-            </section>
+                      <div className="h-px bg-gray-200 my-8"></div>
 
-            {/* Custom Instructions */}
-            <section className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                <div className="flex items-start gap-4 mb-4">
-                    <div className="p-3 bg-white rounded-xl shadow-sm text-purple-600 border border-gray-100">
-                        <FileJson size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-900">System Prompt Suffix</h2>
-                        <p className="text-gray-500 text-sm">Global instructions appended to every generation prompt.</p>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <textarea 
-                        value={instructions}
-                        onChange={(e) => setInstructions(e.target.value)}
-                        placeholder="e.g. Always use TypeScript, prefer functional components..."
-                        className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all min-h-[100px] resize-y"
-                    />
-                </div>
-            </section>
-            
-            <div className="flex justify-end sticky bottom-6 z-20">
-                <button 
-                    onClick={handleSave}
-                    className="flex items-center gap-2 px-8 py-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl active:scale-95 border-2 border-white/20"
-                >
-                    <Save size={18} />
-                    <span>Save All Changes</span>
-                </button>
-            </div>
+                      <div>
+                          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Raw Training Rules</h3>
+                          <textarea 
+                              value={knowledgeCode}
+                              onChange={(e) => setKnowledgeCode(e.target.value)}
+                              placeholder="// Paste your component library API or strict coding rules here..."
+                              className="w-full bg-white p-6 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-none outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs font-mono text-gray-600 min-h-[300px] resize-y transition-all"
+                          />
+                      </div>
+                  </div>
+              )}
 
-            <div className="h-px bg-gray-200 my-8"></div>
+              {/* === DATA TAB === */}
+              {activeTab === 'data' && (
+                  <div className="space-y-8 animate-fade-in">
+                      <div>
+                          <h2 className="text-lg font-bold text-gray-900 mb-1">Data Management</h2>
+                          <p className="text-sm text-gray-500">Import, export, or reset your local data.</p>
+                      </div>
 
-            {/* Data Management */}
-            <section>
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Data Management</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                        onClick={handleExport}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                        <Download size={18} />
-                        <span>Export Data</span>
-                    </button>
-                    <div className="relative">
-                        <input 
-                            type="file" 
-                            accept=".json"
-                            onChange={handleImport}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                            <Upload size={18} />
-                            <span>Import Data</span>
-                        </button>
-                    </div>
-                    <button 
-                        onClick={handleClearData}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-red-100 text-red-600 rounded-xl font-medium hover:bg-red-50 transition-colors"
-                    >
-                        <Trash2 size={18} />
-                        <span>Reset All</span>
-                    </button>
-                </div>
-            </section>
-        </div>
+                      <div className="grid grid-cols-1 gap-4">
+                          <button 
+                              onClick={handleExport}
+                              className="flex items-center justify-between p-5 bg-white rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.06)] hover:scale-[1.01] transition-all group"
+                          >
+                              <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                                      <Download size={20} />
+                                  </div>
+                                  <div className="text-left">
+                                      <p className="text-sm font-bold text-gray-900">Export Backup</p>
+                                      <p className="text-xs text-gray-500">Save your settings & prompts as JSON</p>
+                                  </div>
+                              </div>
+                              <span className="text-xs font-bold bg-gray-100 px-3 py-1 rounded-full text-gray-600">JSON</span>
+                          </button>
+
+                          <div className="relative">
+                              <input type="file" accept=".json" onChange={handleImport} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                              <button className="w-full flex items-center justify-between p-5 bg-white rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.06)] hover:scale-[1.01] transition-all group">
+                                  <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                                          <Upload size={20} />
+                                      </div>
+                                      <div className="text-left">
+                                          <p className="text-sm font-bold text-gray-900">Import Backup</p>
+                                          <p className="text-xs text-gray-500">Restore from a previous backup file</p>
+                                      </div>
+                                  </div>
+                              </button>
+                          </div>
+
+                          <button 
+                              onClick={handleClearData}
+                              className="flex items-center justify-between p-5 bg-red-50/50 rounded-[24px] border border-red-100 hover:bg-red-50 hover:border-red-200 transition-all group mt-4"
+                          >
+                              <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+                                      <Trash2 size={20} />
+                                  </div>
+                                  <div className="text-left">
+                                      <p className="text-sm font-bold text-red-900">Factory Reset</p>
+                                      <p className="text-xs text-red-500">Clear all local storage data</p>
+                                  </div>
+                              </div>
+                          </button>
+                      </div>
+                  </div>
+              )}
+
+          </div>
+
+          {/* Floating Save Button */}
+          <div className="fixed bottom-8 right-8 z-20">
+              <button 
+                  onClick={handleSave}
+                  className={`flex items-center gap-2 px-8 py-4 rounded-full font-bold shadow-2xl transition-all active:scale-95 ${
+                      saveStatus === 'saved' 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-black text-white hover:bg-gray-800'
+                  }`}
+              >
+                  {saveStatus === 'saved' ? <CheckCircle2 size={20} /> : <Save size={20} />}
+                  <span>{saveStatus === 'saved' ? 'Changes Saved' : 'Save Changes'}</span>
+              </button>
+          </div>
+
       </div>
     </div>
   );

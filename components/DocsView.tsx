@@ -409,7 +409,7 @@ export const DocsView: React.FC<DocsViewProps> = ({ onBack }) => {
                  <div className="mb-10 pb-8 border-b border-gray-100">
                      <div className="flex items-center gap-4 mb-4">
                         <div className="p-3 bg-gray-100 rounded-2xl text-gray-900">
-                            {React.cloneElement(activeSection.icon as React.ReactElement, { size: 32 })}
+                            {React.cloneElement(activeSection.icon as React.ReactElement<any>, { size: 32 })}
                         </div>
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">{activeSection.title}</h1>
                      </div>

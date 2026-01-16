@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, ArrowUp, Plus, Sparkles, ChevronDown, Check, X, FileCode, MessageSquare, Image as ImageIcon, ArrowRight, Zap, Loader2, Heart } from 'lucide-react';
+import { Mic, ArrowUp, Plus, Sparkles, ChevronDown, Check, X, FileCode, MessageSquare, Image as ImageIcon, ArrowRight, Zap, Loader2, Heart, GripVertical, LayoutTemplate } from 'lucide-react';
 import { DESIGN_SYSTEMS } from '../constants';
 import { useDeepgram } from '../hooks/useDeepgram';
 
 interface HomeViewProps {
-  onSubmit: (prompt: string, mode: 'prompt' | 'prototype' | 'image') => void;
+  onSubmit: (prompt: string, mode: 'prompt' | 'prototype' | 'image' | 'dynamic') => void;
   onNavigate: (view: 'privacy' | 'terms' | 'docs') => void;
 }
 
@@ -77,9 +77,180 @@ const classifyIntent = (input: string) => {
     return { mode: detectedMode, designSystemId: detectedDsId };
 };
 
+// --- COMPARISON SECTION COMPONENT ---
+const ComparisonSection = () => {
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+
+  const handleMove = (clientX: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const percentage = (x / rect.width) * 100;
+    setSliderPosition(percentage);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (isDragging.current) handleMove(e.clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    handleMove(e.touches[0].clientX);
+  };
+
+  return (
+    <div className="w-full py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+            <div className="mb-12 text-center">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Prompt vs. Architect</h2>
+                <p className="text-gray-500">See the difference structure makes.</p>
+            </div>
+
+            <div 
+                ref={containerRef}
+                className="relative w-full aspect-[16/10] md:aspect-[2.2/1] rounded-[40px] overflow-hidden cursor-ew-resize select-none border border-gray-200 bg-gray-100 shadow-sm"
+                onMouseDown={() => isDragging.current = true}
+                onMouseUp={() => isDragging.current = false}
+                onMouseLeave={() => isDragging.current = false}
+                onMouseMove={onMouseMove}
+                onTouchMove={onTouchMove}
+                onTouchStart={() => isDragging.current = true}
+                onTouchEnd={() => isDragging.current = false}
+                onClick={(e) => handleMove(e.clientX)}
+            >
+                {/* BOTTOM LAYER (RIGHT SIDE visible) -> KINDLY (Good) */}
+                <div className="absolute inset-0 bg-gray-50 flex flex-col font-sans">
+                    {/* Header */}
+                    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-black rounded-lg"></div>
+                            <span className="font-semibold text-gray-900">Nexus</span>
+                        </div>
+                        <div className="flex gap-4 text-sm text-gray-500 font-medium">
+                            <span>Overview</span>
+                            <span className="text-gray-900">Customers</span>
+                            <span>Settings</span>
+                        </div>
+                    </div>
+                    {/* Body */}
+                    <div className="p-8 grid grid-cols-3 gap-6 h-full">
+                        <div className="col-span-2 space-y-6">
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                                <div className="flex justify-between items-end mb-4">
+                                    <div>
+                                        <p className="text-sm text-gray-500 font-medium mb-1">Total Revenue</p>
+                                        <h3 className="text-3xl font-bold text-gray-900">$124,500.00</h3>
+                                    </div>
+                                    <span className="bg-green-50 text-green-700 px-2 py-1 rounded-md text-xs font-bold">+12%</span>
+                                </div>
+                                <div className="h-32 flex items-end gap-2">
+                                    {[40, 60, 45, 70, 50, 80, 65, 85].map((h, i) => (
+                                        <div key={i} className="flex-1 bg-gray-900 rounded-t-sm opacity-90 hover:opacity-100 transition-opacity" style={{ height: `${h}%`}}></div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-gray-50 border-b border-gray-100 text-gray-500">
+                                        <tr>
+                                            <th className="px-6 py-3 font-medium">Customer</th>
+                                            <th className="px-6 py-3 font-medium">Status</th>
+                                            <th className="px-6 py-3 font-medium text-right">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {[1,2,3].map(i => (
+                                            <tr key={i}>
+                                                <td className="px-6 py-4 text-gray-900 font-medium">Acme Corp {i}</td>
+                                                <td className="px-6 py-4"><span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">Active</span></td>
+                                                <td className="px-6 py-4 text-right font-mono">$1,200</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div className="col-span-1 space-y-6">
+                             <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm h-full">
+                                <h4 className="font-bold text-gray-900 mb-4">Activity</h4>
+                                <div className="space-y-4">
+                                    {[1,2,3,4].map(i => (
+                                        <div key={i} className="flex gap-3">
+                                            <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-200"></div>
+                                            <div>
+                                                <p className="text-sm text-gray-900">New signup received</p>
+                                                <p className="text-xs text-gray-400">2m ago</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                    {/* Badge */}
+                    <div className="absolute bottom-6 right-6 bg-black text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg flex items-center gap-2">
+                        <Sparkles size={12} /> Kindly Architect
+                    </div>
+                </div>
+
+                {/* TOP LAYER (LEFT SIDE visible when clipped) -> BASIC PROMPT (Bad) */}
+                <div 
+                    className="absolute inset-0 bg-gradient-to-br from-[#2a0845] to-[#6441A5] flex flex-col font-serif text-white"
+                    style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+                >
+                    {/* Header */}
+                    <div className="p-4 bg-white/10 backdrop-blur-sm border-b border-white/20 flex justify-between items-center">
+                        <h1 className="text-2xl font-bold italic tracking-wider" style={{ fontFamily: 'Times New Roman, serif' }}>SalesDash</h1>
+                        <button className="bg-[#ff00cc] hover:bg-[#d900ad] text-white px-4 py-1 rounded border-2 border-white/50 shadow-[0_0_10px_#ff00cc]">
+                            LOG OUT
+                        </button>
+                    </div>
+                    {/* Body */}
+                    <div className="p-8 flex flex-col gap-8 items-center text-center h-full overflow-hidden">
+                        <div className="w-full max-w-2xl bg-white/10 border-4 border-[#ff00cc] p-8 rounded-xl shadow-[0_0_20px_rgba(255,0,204,0.3)]">
+                            <h2 className="text-4xl mb-4 text-[#00d2ff] font-bold drop-shadow-md">REVENUE $$$</h2>
+                            <p className="text-6xl font-mono mb-6">$124,500</p>
+                            <div className="w-full bg-black/50 h-4 rounded-full overflow-hidden border border-white/30">
+                                <div className="h-full bg-gradient-to-r from-green-400 to-blue-500 w-[70%]"></div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
+                            {[1,2].map(i => (
+                                <div key={i} className="bg-black/40 p-6 border-2 border-white/20 rounded-lg">
+                                    <h3 className="text-xl underline mb-2 text-yellow-300">Client {i}</h3>
+                                    <p>Status: <span className="text-green-400 font-bold">OK</span></p>
+                                    <button className="mt-4 w-full bg-blue-600 border border-blue-400 py-2 rounded shadow-lg">VIEW</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {/* Badge */}
+                    <div className="absolute bottom-6 left-6 bg-[#ff00cc] text-white px-4 py-2 rounded-none border border-white text-xs font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        1 Sentence Prompt
+                    </div>
+                </div>
+
+                {/* SLIDER HANDLE */}
+                <div 
+                    className="absolute inset-y-0 w-1 bg-white cursor-ew-resize z-20 shadow-[0_0_20px_rgba(0,0,0,0.2)]"
+                    style={{ left: `${sliderPosition}%` }}
+                >
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-400 border border-gray-100 hover:scale-110 transition-transform">
+                        <GripVertical size={16} />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+  );
+}
+
 export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
   const [inputValue, setInputValue] = useState('');
-  const [generationMode, setGenerationMode] = useState<'prompt' | 'prototype' | 'image'>('prompt');
+  const [generationMode, setGenerationMode] = useState<'prompt' | 'prototype' | 'image' | 'dynamic'>('prompt');
   
   // Smart Select State
   const [isSmartSelect, setIsSmartSelect] = useState(false);
@@ -200,7 +371,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
       if (!inputValue.trim()) return;
       
       let finalPrompt = inputValue;
-      if (activeSystemItem && generationMode !== 'image') {
+      if (activeSystemItem && generationMode !== 'image' && generationMode !== 'dynamic') {
           finalPrompt = `Using the "${activeSystemItem.title}" design system style (${activeSystemItem.systemPrompt}), please build: ${inputValue}`;
       }
       onSubmit(finalPrompt, generationMode);
@@ -209,12 +380,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
   const getModeLabel = () => {
       if (generationMode === 'prompt') return 'Prompt Generator';
       if (generationMode === 'prototype') return 'Canvas';
+      if (generationMode === 'dynamic') return 'Dynamic View';
       return 'Image Generator';
   };
 
   const getModeIcon = () => {
       if (generationMode === 'prompt') return <MessageSquare size={14} />;
       if (generationMode === 'prototype') return <FileCode size={14} />;
+      if (generationMode === 'dynamic') return <LayoutTemplate size={14} />;
       return <ImageIcon size={14} />;
   };
 
@@ -278,7 +451,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                     />
 
                     {/* Selected System Pill */}
-                    {activeSystemItem && generationMode !== 'image' && (
+                    {activeSystemItem && generationMode !== 'image' && generationMode !== 'dynamic' && (
                         <div className="px-2 mb-2 animate-fade-in-up">
                             <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
                                 <div className={`w-3 h-3 rounded-full ${activeSystemItem.thumbnailClass.split(' ')[0]}`}></div>
@@ -299,7 +472,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                         <div className="flex items-center gap-3">
                             
                              {/* Design System Toggle */}
-                             {generationMode !== 'image' && (
+                             {generationMode !== 'image' && generationMode !== 'dynamic' && (
                                 <div className="relative" ref={systemDropdownRef}>
                                     <button
                                         onClick={() => setIsSystemOpen(!isSystemOpen)}
@@ -381,6 +554,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                                                  <ImageIcon size={16} />
                                                  Image Generator
                                              </button>
+                                             <button
+                                                onClick={() => { setGenerationMode('dynamic'); setIsModeOpen(false); setIsSmartSelect(false); }}
+                                                className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors ${generationMode === 'dynamic' && !isSmartSelect ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                                             >
+                                                 <LayoutTemplate size={16} />
+                                                 Dynamic View
+                                             </button>
 
                                              <div className="h-px bg-gray-100 my-1 mx-2"></div>
 
@@ -438,18 +618,19 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
               {/* Main Header */}
               <div className="text-center mb-16">
                   <h2 
-                    className="text-4xl md:text-6xl font-medium tracking-tight mb-6 pb-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent inline-block leading-tight"
+                    className="text-4xl md:text-6xl font-medium tracking-tight mb-6 pb-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent inline-block leading-tight"
                     style={{ fontFamily: '"Google Sans Flex", sans-serif' }}
                   >
-                      Kindly Intelligence
+                      Meet Ask Kindly
                   </h2>
                   <div className="flex justify-center mb-6">
-                      <span className="bg-black text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-md">
-                          Kindly 2.0 Now Live
+                      <span className="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-100 shadow-sm flex items-center gap-2">
+                          <Sparkles size={12} className="text-blue-500" />
+                          Your AI Design Companion
                       </span>
                   </div>
                   <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                      Our most advanced model yet. Powered by Gemini 3.0 Flash for unprecedented speed and coherence in UI generation.
+                      A context-aware intelligence that lives alongside your canvas. Speak your ideas, refine your designs, and build complex interfaces in real-time.
                   </p>
               </div>
 
@@ -459,62 +640,61 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
                   {/* Feature 1 */}
                   <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                          <h3 className="text-2xl font-bold text-black tracking-tight">
-                              Global Edge API
+                          <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                              Deep Context Awareness
                           </h3>
-                          <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
                       </div>
                       <p className="text-lg text-gray-600 leading-relaxed font-normal">
-                          The Kindly Intelligence API is now live. Deployed to the Global Edge for ultra-low latency, it powers the "Ask Kindly" assistant with specialized text processing capabilities including Rewrite, Summarize, Explain, and Shorten.
+                          Ask Kindly doesn't just chat; it sees what you're building. It analyzes your active design system, selected components, and current code to provide suggestions that actually fit your project's architecture.
                       </p>
                   </div>
 
                   {/* Feature 2 */}
                   <div className="space-y-3">
-                      <h3 className="text-2xl font-bold text-black tracking-tight">
-                          No Rate Limits
-                      </h3>
+                      <div className="flex items-center gap-3">
+                          <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                              Voice-First Workflow
+                          </h3>
+                          <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 border border-red-100">
+                             <Mic size={10} /> Live
+                          </span>
+                      </div>
                       <p className="text-lg text-gray-600 leading-relaxed font-normal">
-                          We believe in accessible intelligence. The API is completely free to use with no API key required and generous fair-use policies, making it perfect for rapid development and testing.
+                          Powered by Deepgram's Nova-2 model, you can iterate at the speed of thought. Just hold the mic button and describe changes like "make the background darker" or "add a user profile card here."
                       </p>
                   </div>
 
                   {/* Feature 3 */}
                   <div className="space-y-3">
-                      <h3 className="text-2xl font-bold text-black tracking-tight">
-                          Processing Stats
+                      <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                          Canvas Generation
                       </h3>
                       <p className="text-lg text-gray-600 leading-relaxed font-normal">
-                          Gain insights into your text transformations. The API returns detailed statistics with every response, including compression ratios, word counts, and processing time in milliseconds.
+                          Go from zero to prototype in seconds. Tell Ask Kindly to "build a SaaS dashboard with a sidebar and data table," and watch it generate the full HTML structure and Tailwind classes instantly.
                       </p>
                   </div>
 
-                  {/* Feature 4 - Smart Search */}
+                  {/* Feature 4 */}
                   <div className="space-y-3">
-                      <h3 className="text-2xl font-bold text-black tracking-tight">
-                          JavaScript SDK
-                      </h3>
+                      <div className="flex items-center gap-3">
+                          <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                              Library Search
+                          </h3>
+                          <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                             Smart
+                          </span>
+                      </div>
                       <p className="text-lg text-gray-600 leading-relaxed font-normal">
-                          Easy integration for any JS environment. Check the documentation for simple fetch examples to start using Kindly Intelligence in your own applications today.
-                      </p>
-                  </div>
-
-                  {/* Feature 5 - Image Gen */}
-                  <div className="space-y-3">
-                      <h3 className="text-2xl font-bold text-black tracking-tight">
-                          Visual Generation
-                      </h3>
-                      <p className="text-lg text-gray-600 leading-relaxed font-normal">
-                          The Image Generator is now powered by Kindly Intelligence. Generate stunning UI assets, icons, and textures with prompt coherence optimized specifically for interface design.
+                          Never get lost in a massive component library again. Ask Kindly uses semantic search to find specific elements, styles, or prompts from our curated collection of over 100+ items.
                       </p>
                   </div>
 
                   <div className="pt-8 text-center">
                       <button 
-                        onClick={() => onNavigate('docs')}
-                        className="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-gray-800 transition-colors inline-flex items-center gap-2"
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        className="bg-black text-white px-8 py-3.5 rounded-full font-bold hover:bg-gray-800 transition-all inline-flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
                       >
-                          View API Docs <ArrowRight size={16} />
+                          Try it now <ArrowUp size={16} />
                       </button>
                   </div>
 
@@ -576,6 +756,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSubmit, onNavigate }) => {
             </div>
          </div>
       </div>
+
+      {/* --- COMPARISON SECTION --- */}
+      <ComparisonSection />
 
       {/* --- FAQ SECTION --- */}
       <div className="w-full py-24 bg-white border-t border-gray-100 mb-10">

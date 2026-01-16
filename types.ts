@@ -11,7 +11,7 @@ export interface ComponentItem {
   readme?: string; // Optional field for generated README.md
   code?: string; // Optional field for generated HTML code
   createdAt?: number; // Timestamp for recent items
-  type?: 'prompt' | 'prototype' | 'image' | 'folder' | 'file'; // Type of creation
+  type?: 'prompt' | 'prototype' | 'image' | 'folder' | 'file' | 'dynamic'; // Type of creation
   parentId?: string | null; // For folder structure
   content?: string; // For file content
   tokens?: any; // For design systems

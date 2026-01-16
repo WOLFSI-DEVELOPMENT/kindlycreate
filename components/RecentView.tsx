@@ -3,13 +3,13 @@ import React, { useState, useMemo, useRef } from 'react';
 import { ComponentItem } from '../types';
 import { 
   Folder, File, Image as ImageIcon, FileCode, MessageSquare, 
-  MoreHorizontal, Plus, Search, ArrowLeft, Upload, Grid, List 
+  MoreHorizontal, Plus, Search, ArrowLeft, Upload, Grid, List, X, Check, Edit2, CornerDownLeft
 } from 'lucide-react';
 
 interface GalleryViewProps {
   items: ComponentItem[];
   onSelectItem: (item: ComponentItem) => void;
-  onUpdateItems: (items: ComponentItem[]) => void;
+  onUpdateItems: React.Dispatch<React.SetStateAction<ComponentItem[]>>;
 }
 
 export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, onUpdateItems }) => {
@@ -18,6 +18,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Renaming State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+
+  // Drag & Drop State
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragTargetId, setDragTargetId] = useState<string | null>(null);
+
+  // Modal State
+  const [modalType, setModalType] = useState<'none' | 'folder' | 'prompt'>('none');
+  const [modalInput1, setModalInput1] = useState(''); // Name or Title
+  const [modalInput2, setModalInput2] = useState(''); // Prompt Text
 
   // --- Helpers ---
 
@@ -39,7 +52,15 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
   }, [currentFolderId, items]);
 
   const filteredItems = useMemo(() => {
-      let filtered = items.filter(item => item.parentId === (currentFolderId || undefined));
+      // Robust filter for parentId: treat null and undefined as equal for root folder
+      let filtered = items.filter(item => {
+          if (!currentFolderId) {
+              // We are at root, show items with null or undefined parentId
+              return !item.parentId;
+          }
+          // We are in a folder, show items strictly matching this folder ID
+          return item.parentId === currentFolderId;
+      });
       
       // If searching, search EVERYTHING and ignore folders structure
       if (searchQuery.trim()) {
@@ -60,103 +81,162 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
 
   // --- Actions ---
 
-  const handleCreateFolder = () => {
-      const name = prompt("Folder Name:");
-      if (!name) return;
-      
-      const newFolder: ComponentItem = {
-          id: `folder-${Date.now()}`,
-          title: name,
-          description: "Folder",
-          category: 'Folder',
-          type: 'folder',
-          thumbnailClass: 'bg-yellow-50',
-          systemPrompt: '',
-          views: 0,
-          copies: 0,
-          createdAt: Date.now(),
-          parentId: currentFolderId
-      };
-      
-      onUpdateItems([newFolder, ...items]);
+  const openModal = (type: 'folder' | 'prompt') => {
+      setModalType(type);
+      setModalInput1('');
+      setModalInput2('');
       setIsCreateMenuOpen(false);
   };
 
-  const handleCreatePrompt = () => {
-      const title = prompt("Title for your prompt:");
-      if (!title) return;
-      const promptText = prompt("Enter your prompt text:");
-      if (!promptText) return;
-
-      const newItem: ComponentItem = {
-          id: `prompt-${Date.now()}`,
-          title: title,
-          description: promptText,
-          category: 'UI Component',
-          type: 'prompt',
-          thumbnailClass: 'bg-blue-50',
-          systemPrompt: promptText,
-          views: 0,
-          copies: 0,
-          createdAt: Date.now(),
-          parentId: currentFolderId
-      };
-      
-      onUpdateItems([newItem, ...items]);
-      setIsCreateMenuOpen(false);
+  const handleModalSubmit = () => {
+      if (modalType === 'folder') {
+          if (!modalInput1.trim()) return;
+          const newFolder: ComponentItem = {
+              id: `folder-${Date.now()}`,
+              title: modalInput1,
+              description: "Folder",
+              category: 'Folder',
+              type: 'folder',
+              thumbnailClass: 'bg-yellow-50',
+              systemPrompt: '',
+              views: 0,
+              copies: 0,
+              createdAt: Date.now(),
+              parentId: currentFolderId
+          };
+          onUpdateItems(prev => [newFolder, ...prev]);
+      } else if (modalType === 'prompt') {
+          if (!modalInput1.trim() || !modalInput2.trim()) return;
+          const newItem: ComponentItem = {
+              id: `prompt-${Date.now()}`,
+              title: modalInput1,
+              description: modalInput2,
+              category: 'UI Component',
+              type: 'prompt',
+              thumbnailClass: 'bg-blue-50',
+              systemPrompt: modalInput2,
+              views: 0,
+              copies: 0,
+              createdAt: Date.now(),
+              parentId: currentFolderId
+          };
+          onUpdateItems(prev => [newItem, ...prev]);
+      }
+      setModalType('none');
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      const newItems: ComponentItem[] = [];
-
       Array.from(files).forEach((file: File) => {
-          const isImage = file.type.startsWith('image/');
-          const reader = new FileReader();
-          
-          reader.onload = (event) => {
-              const content = event.target?.result as string;
-              
-              const newItem: ComponentItem = {
-                  id: `file-${Date.now()}-${Math.random()}`,
-                  title: file.name,
-                  description: `Uploaded ${isImage ? 'Image' : 'File'}`,
-                  category: isImage ? 'UI Component' : 'File',
-                  type: isImage ? 'image' : 'file',
-                  thumbnailClass: isImage ? 'bg-gray-100' : 'bg-gray-50',
-                  systemPrompt: isImage ? 'Image Asset' : 'File Content',
-                  code: isImage ? `<img src="${content}" alt="${file.name}" class="w-full h-auto" />` : content,
-                  views: 0,
-                  copies: 0,
-                  createdAt: Date.now(),
-                  parentId: currentFolderId
-              };
-              
-              // We need to update state safely considering async FileReader
-              // For simplicity in this demo, we'll force a re-render by calling update immediately for each
-              // In prod, you'd promise.all these
-              onUpdateItems(prev => [newItem, ...prev]);
-          };
-
-          if (isImage) {
-              reader.readAsDataURL(file);
-          } else {
-              reader.readAsText(file);
+          if (file.size > 500 * 1024 * 1024) {
+              alert(`File ${file.name} is too large (max 500MB).`);
+              return;
           }
+
+          const isImage = file.type.startsWith('image/');
+          const objectUrl = URL.createObjectURL(file);
+          
+          const codePreview = isImage 
+            ? `<img src="${objectUrl}" alt="${file.name}" class="w-full h-auto object-contain" />` 
+            : `<div class="p-8 text-center"><p class="text-lg font-bold mb-2">File: ${file.name}</p><p class="text-sm text-gray-500 mb-4">Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p><a href="${objectUrl}" download="${file.name}" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Download File</a></div>`;
+
+          const newItem: ComponentItem = {
+              id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              title: file.name,
+              description: `Uploaded ${isImage ? 'Image' : 'File'} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+              category: isImage ? 'UI Component' : 'File',
+              type: isImage ? 'image' : 'file',
+              thumbnailClass: isImage ? 'bg-gray-100' : 'bg-gray-50',
+              systemPrompt: isImage ? 'Image Asset' : 'File Content',
+              code: codePreview,
+              views: 0,
+              copies: 0,
+              createdAt: Date.now(),
+              parentId: currentFolderId
+          };
+          
+          onUpdateItems(prev => [newItem, ...prev]);
       });
       
       setIsCreateMenuOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // --- Item Interaction ---
+
   const handleItemClick = (item: ComponentItem) => {
+      if (editingId === item.id) return; // Don't click if editing
       if (item.type === 'folder') {
           setCurrentFolderId(item.id);
           setSearchQuery('');
       } else {
           onSelectItem(item);
       }
+  };
+
+  const deleteItem = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      if(confirm('Delete this item?')) {
+          onUpdateItems(prev => prev.filter(i => i.id !== id));
+      }
+  };
+
+  const startRenaming = (e: React.MouseEvent, item: ComponentItem) => {
+      e.stopPropagation();
+      setEditingId(item.id);
+      setEditTitle(item.title);
+  };
+
+  const saveRename = () => {
+      if (editingId && editTitle.trim()) {
+          onUpdateItems(prev => prev.map(item => 
+              item.id === editingId ? { ...item, title: editTitle.trim() } : item
+          ));
+      }
+      setEditingId(null);
+      setEditTitle('');
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') saveRename();
+      if (e.key === 'Escape') setEditingId(null);
+  };
+
+  // --- Drag & Drop Logic ---
+
+  const handleDragStart = (e: React.DragEvent, item: ComponentItem) => {
+      setDraggedItemId(item.id);
+      e.dataTransfer.setData('text/plain', item.id);
+      // Create a clean drag image if desired, or let browser default handle it
+  };
+
+  const handleDragOver = (e: React.DragEvent, item: ComponentItem) => {
+      e.preventDefault(); // Necessary to allow dropping
+      if (item.type === 'folder' && item.id !== draggedItemId) {
+          setDragTargetId(item.id);
+      }
+  };
+
+  const handleDragLeave = () => {
+      setDragTargetId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetItem: ComponentItem) => {
+      e.preventDefault();
+      setDragTargetId(null);
+      
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId || draggedId === targetItem.id) return;
+
+      if (targetItem.type === 'folder') {
+          // Update the parentId of the dragged item
+          onUpdateItems(prev => prev.map(item => 
+              item.id === draggedId ? { ...item, parentId: targetItem.id } : item
+          ));
+      }
+      setDraggedItemId(null);
   };
 
   const getIcon = (item: ComponentItem) => {
@@ -168,7 +248,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
   };
 
   return (
-    <div className="w-full h-full bg-[#FAFAFA] flex flex-col font-sans">
+    <div className="w-full h-full bg-[#FAFAFA] flex flex-col font-sans relative">
       
       {/* Top Bar */}
       <div className="px-8 py-6 bg-white border-b border-gray-100 flex items-center justify-between sticky top-0 z-10">
@@ -241,10 +321,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setIsCreateMenuOpen(false)}></div>
                         <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20 animate-fade-in-up origin-top-right">
-                            <button onClick={handleCreateFolder} className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3">
+                            <button onClick={() => openModal('folder')} className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3">
                                 <Folder size={16} className="text-yellow-500" /> New Folder
                             </button>
-                            <button onClick={handleCreatePrompt} className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3">
+                            <button onClick={() => openModal('prompt')} className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3">
                                 <MessageSquare size={16} className="text-blue-500" /> New Prompt
                             </button>
                             <button onClick={() => fileInputRef.current?.click()} className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3">
@@ -259,7 +339,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-8" onClick={() => editingId && saveRename()}>
           
           {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -268,7 +348,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Gallery is empty</h3>
                   <p className="text-gray-500 max-w-sm mb-8">Start organizing your AI generations by creating folders or uploading files.</p>
-                  <button onClick={handleCreatePrompt} className="text-blue-600 font-medium hover:underline">Create your first prompt</button>
+                  <button onClick={() => openModal('prompt')} className="text-blue-600 font-medium hover:underline">Create your first prompt</button>
               </div>
           ) : (
               <>
@@ -278,10 +358,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
                             <div 
                                 key={item.id} 
                                 onClick={() => handleItemClick(item)}
-                                className="group relative bg-white rounded-2xl border border-gray-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer aspect-[4/5] flex flex-col overflow-hidden"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, item)}
+                                onDragOver={(e) => handleDragOver(e, item)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, item)}
+                                className={`group relative bg-white rounded-2xl border transition-all cursor-pointer aspect-[4/5] flex flex-col overflow-hidden ${
+                                    dragTargetId === item.id 
+                                    ? 'border-blue-500 ring-2 ring-blue-200 scale-105 shadow-xl' 
+                                    : 'border-gray-200 hover:border-blue-400 hover:shadow-md'
+                                }`}
                             >
                                 {/* Thumbnail */}
-                                <div className={`flex-1 flex items-center justify-center ${item.type === 'folder' ? 'bg-white' : 'bg-gray-50 group-hover:bg-gray-100'} transition-colors relative`}>
+                                <div className={`flex-1 flex items-center justify-center ${item.type === 'folder' ? 'bg-white' : 'bg-gray-50 group-hover:bg-gray-100'} transition-colors relative overflow-hidden`}>
                                     {item.type === 'image' && item.code && item.code.includes('<img') ? (
                                         <div dangerouslySetInnerHTML={{ __html: item.code }} className="w-full h-full object-cover pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity" />
                                     ) : (
@@ -291,16 +380,40 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
                                     )}
                                     
                                     {/* Quick Actions Overlay */}
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-1.5 bg-white/90 backdrop-blur rounded-full hover:bg-white text-gray-600 shadow-sm border border-gray-200">
-                                            <MoreHorizontal size={14} />
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                        <button 
+                                            onClick={(e) => startRenaming(e, item)}
+                                            className="p-1.5 bg-white/90 backdrop-blur rounded-full hover:bg-gray-100 text-gray-600 shadow-sm border border-gray-200"
+                                            title="Rename"
+                                        >
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => deleteItem(e, item.id)}
+                                            className="p-1.5 bg-white/90 backdrop-blur rounded-full hover:bg-red-50 hover:text-red-600 text-gray-600 shadow-sm border border-gray-200"
+                                            title="Delete"
+                                        >
+                                            <X size={14} />
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* Meta */}
                                 <div className="p-4 border-t border-gray-50 bg-white">
-                                    <h4 className="font-semibold text-gray-900 text-sm truncate mb-1">{item.title}</h4>
+                                    {editingId === item.id ? (
+                                        <input 
+                                            type="text" 
+                                            value={editTitle}
+                                            onChange={(e) => setEditTitle(e.target.value)}
+                                            onKeyDown={handleRenameKeyDown}
+                                            onBlur={saveRename}
+                                            autoFocus
+                                            className="w-full text-sm font-semibold text-gray-900 border border-blue-300 rounded px-1 outline-none"
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    ) : (
+                                        <h4 className="font-semibold text-gray-900 text-sm truncate mb-1">{item.title}</h4>
+                                    )}
                                     <p className="text-xs text-gray-400 truncate flex items-center gap-1">
                                         {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Just now'}
                                         {item.type === 'folder' && ` • ${items.filter(i => i.parentId === item.id).length} items`}
@@ -325,12 +438,31 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
                                     <tr 
                                         key={item.id} 
                                         onClick={() => handleItemClick(item)}
-                                        className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, item)}
+                                        onDragOver={(e) => handleDragOver(e, item)}
+                                        onDrop={(e) => handleDrop(e, item)}
+                                        className={`cursor-pointer transition-colors group ${
+                                            dragTargetId === item.id ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
+                                        }`}
                                     >
                                         <td className="px-6 py-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="scale-75 origin-left">{getIcon(item)}</div>
-                                                <span className="font-medium text-gray-900">{item.title}</span>
+                                                {editingId === item.id ? (
+                                                    <input 
+                                                        type="text" 
+                                                        value={editTitle}
+                                                        onChange={(e) => setEditTitle(e.target.value)}
+                                                        onKeyDown={handleRenameKeyDown}
+                                                        onBlur={saveRename}
+                                                        autoFocus
+                                                        className="text-sm font-medium text-gray-900 border border-blue-300 rounded px-1 outline-none w-full"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                ) : (
+                                                    <span className="font-medium text-gray-900">{item.title}</span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-3">
@@ -340,9 +472,22 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
                                             {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-3 text-right">
-                                            <button className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <MoreHorizontal size={16} />
-                                            </button>
+                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={(e) => startRenaming(e, item)}
+                                                    className="text-gray-400 hover:text-blue-500"
+                                                    title="Rename"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => deleteItem(e, item.id)}
+                                                    className="text-gray-400 hover:text-red-500"
+                                                    title="Delete"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -353,6 +498,68 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ items, onSelectItem, o
               </>
           )}
       </div>
+
+      {/* --- CREATE MODAL --- */}
+      {modalType !== 'none' && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative animate-fade-in-up">
+                  <button onClick={() => setModalType('none')} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                      <X size={20} />
+                  </button>
+                  
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">
+                      {modalType === 'folder' ? 'Create New Folder' : 'Create New Prompt'}
+                  </h3>
+
+                  <div className="space-y-4">
+                      <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                              {modalType === 'folder' ? 'Folder Name' : 'Title'}
+                          </label>
+                          <input 
+                              type="text" 
+                              value={modalInput1}
+                              onChange={(e) => setModalInput1(e.target.value)}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                              placeholder={modalType === 'folder' ? 'e.g., Design Assets' : 'e.g., Login Flow'}
+                              autoFocus
+                          />
+                      </div>
+
+                      {modalType === 'prompt' && (
+                          <div>
+                              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                                  System Prompt
+                              </label>
+                              <textarea 
+                                  value={modalInput2}
+                                  onChange={(e) => setModalInput2(e.target.value)}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 min-h-[120px] resize-none"
+                                  placeholder="Describe your prompt here..."
+                              />
+                          </div>
+                      )}
+
+                      <div className="flex justify-end gap-3 pt-2">
+                          <button 
+                              onClick={() => setModalType('none')}
+                              className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                          >
+                              Cancel
+                          </button>
+                          <button 
+                              onClick={handleModalSubmit}
+                              disabled={!modalInput1.trim() || (modalType === 'prompt' && !modalInput2.trim())}
+                              className="px-6 py-2 bg-black text-white rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                              Create
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 };

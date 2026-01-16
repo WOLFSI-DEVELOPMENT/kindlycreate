@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Eye, GitFork, Check, Download, ChevronDown, Copy, Minimize2, Maximize2, Code, Terminal, Sparkles, Monitor, Smartphone, Share, RotateCcw } from 'lucide-react';
+import { Eye, GitFork, Check, Download, ChevronDown, Copy, Minimize2, Maximize2, Code, Terminal, Sparkles, Monitor, Smartphone, Share, RotateCcw, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Type, Palette } from 'lucide-react';
 import { PreviewAreaProps } from '../types';
 import { RadiantPreview } from './RadiantPreview';
 import { PricingSection } from './PricingSection';
@@ -154,9 +154,10 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
 
   // Determine if we should show visual tabs (Preview/Code)
-  // ONLY for Prototypes and Design Systems, as requested.
-  const showVisualTabs = item.type === 'prototype' || item.category === 'Design System';
-  const isPrototype = item.type === 'prototype';
+  // ONLY for Prototypes, Design Systems, and Dynamic items.
+  const showVisualTabs = item.type === 'prototype' || item.category === 'Design System' || item.type === 'dynamic';
+  const isPrototype = item.type === 'prototype' || item.type === 'dynamic';
+  const isDynamic = item.type === 'dynamic';
 
   // Effect to set initial active tab
   useEffect(() => {
@@ -235,7 +236,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
 
     // Generated Code Preview
     if (item.code) {
-        // Detect if the code is a full HTML document (typical for Design Systems)
+        // Detect if the code is a full HTML document (typical for Design Systems/Dynamic)
         const isFullHtml = item.code.trim().startsWith('<!DOCTYPE html>') || item.code.trim().startsWith('<html');
         
         // If it's full HTML, serve it directly. If it's a snippet, wrap it.
@@ -254,7 +255,7 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
     }
     
     // Fallback if type is prototype but code is missing/generating
-    if (item.type === 'prototype') {
+    if (item.type === 'prototype' || item.type === 'dynamic') {
         return (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                 <Sparkles className="w-8 h-8 animate-pulse text-indigo-300" />
@@ -272,139 +273,165 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
       {/* Floating Toolbar */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-1.5 bg-white rounded-full shadow-lg border border-gray-200">
           
-          {/* Device Toggles - Only for Prototypes/Design Systems */}
-          {showVisualTabs && (
-              <div className="flex bg-gray-100 rounded-full p-1">
-                  <button 
-                    onClick={() => setDeviceMode('desktop')}
-                    className={`p-2 rounded-full transition-all ${deviceMode === 'desktop' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                    title="Desktop View"
-                  >
-                      <Monitor size={16} />
+          {/* Dynamic View Specific Toolbar */}
+          {isDynamic ? (
+              <div className="flex items-center gap-1 px-2">
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                      <button className="p-2 hover:bg-white rounded-md transition-colors text-gray-700" title="Bold"><Bold size={14} /></button>
+                      <button className="p-2 hover:bg-white rounded-md transition-colors text-gray-700" title="Italic"><Italic size={14} /></button>
+                      <button className="p-2 hover:bg-white rounded-md transition-colors text-gray-700" title="Underline"><Underline size={14} /></button>
+                  </div>
+                  <div className="w-px h-4 bg-gray-200 mx-1"></div>
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                      <button className="p-2 hover:bg-white rounded-md transition-colors text-gray-700" title="Align Left"><AlignLeft size={14} /></button>
+                      <button className="p-2 hover:bg-white rounded-md transition-colors text-gray-700" title="Align Center"><AlignCenter size={14} /></button>
+                      <button className="p-2 hover:bg-white rounded-md transition-colors text-gray-700" title="Align Right"><AlignRight size={14} /></button>
+                  </div>
+                  <div className="w-px h-4 bg-gray-200 mx-1"></div>
+                  <button className="flex items-center gap-1 px-3 py-1.5 hover:bg-gray-50 rounded-lg text-xs font-medium text-gray-700 transition-colors">
+                      <Type size={14} /> <span>Serif</span>
                   </button>
-                  <button 
-                    onClick={() => setDeviceMode('mobile')}
-                    className={`p-2 rounded-full transition-all ${deviceMode === 'mobile' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                    title="Mobile View"
-                  >
-                      <Smartphone size={16} />
+                  <button className="flex items-center gap-1 px-3 py-1.5 hover:bg-gray-50 rounded-lg text-xs font-medium text-gray-700 transition-colors">
+                      <Palette size={14} /> <div className="w-3 h-3 bg-black rounded-full"></div>
                   </button>
               </div>
-          )}
+          ) : (
+              <>
+                {/* Device Toggles - Only for Prototypes/Design Systems */}
+                {showVisualTabs && (
+                    <div className="flex bg-gray-100 rounded-full p-1">
+                        <button 
+                            onClick={() => setDeviceMode('desktop')}
+                            className={`p-2 rounded-full transition-all ${deviceMode === 'desktop' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            title="Desktop View"
+                        >
+                            <Monitor size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setDeviceMode('mobile')}
+                            className={`p-2 rounded-full transition-all ${deviceMode === 'mobile' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            title="Mobile View"
+                        >
+                            <Smartphone size={16} />
+                        </button>
+                    </div>
+                )}
 
-          {showVisualTabs && <div className="w-px h-4 bg-gray-200 mx-1"></div>}
+                {showVisualTabs && <div className="w-px h-4 bg-gray-200 mx-1"></div>}
 
-          {/* View Modes */}
-          <div className="flex items-center gap-1">
-             {showVisualTabs && (
-                <>
-                    <button 
-                        onClick={() => setActiveTab('preview')} 
-                        className={`p-2 rounded-full transition-all ${activeTab === 'preview' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                        title="Canvas"
-                    >
-                        <Eye size={16} />
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('code')} 
-                        className={`p-2 rounded-full transition-all ${activeTab === 'code' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                        title="Code"
-                    >
-                        <Code size={16} />
-                    </button>
-                </>
-             )}
-             {!isPrototype && (
-                 <button 
-                    onClick={() => setActiveTab('prompt')} 
-                    className={`p-2 rounded-full transition-all ${activeTab === 'prompt' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                    title="System Prompt"
-                 >
-                    <Terminal size={16} />
-                 </button>
-             )}
-          </div>
-
-          <div className="w-px h-4 bg-gray-200 mx-1"></div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-1 relative">
-              {onToggleAskKindly && (
-                  <button 
-                    onClick={onToggleAskKindly}
-                    className={`p-2 rounded-full transition-all ${isAskKindlyActive ? 'bg-purple-100 text-purple-600' : 'text-gray-500 hover:bg-gray-100'}`}
-                    title="Ask Kindly"
-                  >
-                      <BlingIcon />
-                  </button>
-              )}
-
-              {/* Copy Button */}
-              {!isPrototype && (
-                  <button 
-                    onClick={handleCopy}
-                    className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
-                    title="Copy to Clipboard"
-                  >
-                    {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-                  </button>
-              )}
-
-              {/* Download Button */}
-              <button 
-                onClick={handleDownload}
-                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
-                title="Download File"
-              >
-                <Download size={16} />
-              </button>
-              
-              {!isPrototype && (
-                  <div className="relative">
-                      <button 
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full text-xs font-bold hover:bg-gray-800 transition-colors"
-                      >
-                          <span>Export</span>
-                          <ChevronDown size={12} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {/* Export Dropdown */}
-                      {dropdownOpen && (
+                {/* View Modes */}
+                <div className="flex items-center gap-1">
+                    {showVisualTabs && (
                         <>
-                          <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)}></div>
-                          <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-1.5 overflow-hidden">
-                            <button onClick={() => openUrl('https://chatgpt.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <ChatGPTIcon /> ChatGPT
+                            <button 
+                                onClick={() => setActiveTab('preview')} 
+                                className={`p-2 rounded-full transition-all ${activeTab === 'preview' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                                title="Canvas"
+                            >
+                                <Eye size={16} />
                             </button>
-                            <button onClick={() => openUrl('cursor://link/prompt?text={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <CursorIcon /> Cursor
+                            <button 
+                                onClick={() => setActiveTab('code')} 
+                                className={`p-2 rounded-full transition-all ${activeTab === 'code' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                                title="Code"
+                            >
+                                <Code size={16} />
                             </button>
-                            <button onClick={() => openUrl('https://bolt.new/?prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <BoltIcon /> Bolt
-                            </button>
-                             <button onClick={() => openUrl('https://v0.dev/?q={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <V0Icon /> v0
-                            </button>
-                            <button onClick={() => openUrl('https://lovable.dev/?autosubmit=true#prompt={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <LovableIcon /> Lovable
-                            </button>
-                            <button onClick={() => openUrl('https://aistudio.google.com/apps?autosubmit=true&prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <AIStudioIcon /> Google AI Studio
-                            </button>
-                            <button onClick={() => openUrl('https://grok.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <GrokIcon /> Grok
-                            </button>
-                            <div className="h-px bg-gray-100 my-1"></div>
-                            <button onClick={() => { handleCopy(); setDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
-                                <CopyIcon /> {copied ? 'Copied!' : 'Copy Prompt'}
-                            </button>
-                          </div>
                         </>
-                      )}
-                  </div>
-              )}
-          </div>
+                    )}
+                    {!isPrototype && (
+                        <button 
+                            onClick={() => setActiveTab('prompt')} 
+                            className={`p-2 rounded-full transition-all ${activeTab === 'prompt' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                            title="System Prompt"
+                        >
+                            <Terminal size={16} />
+                        </button>
+                    )}
+                </div>
+
+                <div className="w-px h-4 bg-gray-200 mx-1"></div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 relative">
+                    {onToggleAskKindly && (
+                        <button 
+                            onClick={onToggleAskKindly}
+                            className={`p-2 rounded-full transition-all ${isAskKindlyActive ? 'bg-purple-100 text-purple-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                            title="Ask Kindly"
+                        >
+                            <BlingIcon />
+                        </button>
+                    )}
+
+                    {/* Copy Button */}
+                    {!isPrototype && (
+                        <button 
+                            onClick={handleCopy}
+                            className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
+                            title="Copy to Clipboard"
+                        >
+                            {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                        </button>
+                    )}
+
+                    {/* Download Button */}
+                    <button 
+                        onClick={handleDownload}
+                        className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
+                        title="Download File"
+                    >
+                        <Download size={16} />
+                    </button>
+                    
+                    {!isPrototype && (
+                        <div className="relative">
+                            <button 
+                                onClick={() => setDropdownOpen(!dropdownOpen)}
+                                className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full text-xs font-bold hover:bg-gray-800 transition-colors"
+                            >
+                                <span>Export</span>
+                                <ChevronDown size={12} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* Export Dropdown */}
+                            {dropdownOpen && (
+                                <>
+                                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)}></div>
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-1.5 overflow-hidden">
+                                    <button onClick={() => openUrl('https://chatgpt.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <ChatGPTIcon /> ChatGPT
+                                    </button>
+                                    <button onClick={() => openUrl('cursor://link/prompt?text={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <CursorIcon /> Cursor
+                                    </button>
+                                    <button onClick={() => openUrl('https://bolt.new/?prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <BoltIcon /> Bolt
+                                    </button>
+                                    <button onClick={() => openUrl('https://v0.dev/?q={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <V0Icon /> v0
+                                    </button>
+                                    <button onClick={() => openUrl('https://lovable.dev/?autosubmit=true#prompt={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <LovableIcon /> Lovable
+                                    </button>
+                                    <button onClick={() => openUrl('https://aistudio.google.com/apps?autosubmit=true&prompt={YOUR_PROMPT}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <AIStudioIcon /> Google AI Studio
+                                    </button>
+                                    <button onClick={() => openUrl('https://grok.com/?q={YOUR_PROMPT_HERE}')} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <GrokIcon /> Grok
+                                    </button>
+                                    <div className="h-px bg-gray-100 my-1"></div>
+                                    <button onClick={() => { handleCopy(); setDropdownOpen(false); }} className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors">
+                                        <CopyIcon /> {copied ? 'Copied!' : 'Copy Prompt'}
+                                    </button>
+                                </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+              </>
+          )}
       </div>
 
       {/* Content */}
