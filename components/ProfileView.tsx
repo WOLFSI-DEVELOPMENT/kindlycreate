@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { User, ComponentItem } from '../types';
 import { 
-  Camera, Mail, Calendar, Zap, Layout, Image as ImageIcon, 
-  Settings, LogOut, CreditCard, Bell, Shield, ChevronRight, Edit2 
+  Mail, Calendar, Zap, Layout, Image as ImageIcon, 
+  CreditCard, ChevronRight, LogOut 
 } from 'lucide-react';
 
 interface ProfileViewProps {
   user: User;
   items: ComponentItem[];
-  onNavigate: (view: any) => void; // Using any for ViewState to avoid circular deps if types aren't shared perfectly
+  onNavigate: (view: any) => void;
   onSignOut: () => void;
 }
 
@@ -20,191 +20,153 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, items, onNavigat
   const totalGenerations = items.length;
   const prototypes = items.filter(i => i.type === 'prototype' || i.type === 'dynamic').length;
   const images = items.filter(i => i.type === 'image').length;
-  const prompts = items.filter(i => i.type === 'prompt').length;
 
   return (
-    <div className="w-full h-full bg-[#F9FAFB] font-sans overflow-y-auto">
+    <div className="w-full h-full bg-white font-sans overflow-y-auto">
       
-      {/* Cover Image & Header */}
-      <div className="relative h-64 w-full bg-white">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-90"></div>
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+      {/* Minimal Cover */}
+      <div className="h-48 w-full bg-zinc-50 border-b border-zinc-100 relative"></div>
+
+      <div className="max-w-5xl mx-auto px-6 sm:px-8">
           
-          {/* Content Container */}
-          <div className="max-w-5xl mx-auto px-6 h-full flex items-end pb-8 relative z-10">
-              <div className="flex flex-col md:flex-row items-end md:items-center gap-6 w-full translate-y-12 md:translate-y-16">
-                  {/* Avatar */}
-                  <div className="relative group">
-                      <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white">
-                          <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
-                      </div>
-                      <button className="absolute bottom-1 right-1 p-2 bg-white rounded-full shadow-md text-gray-500 hover:text-black transition-colors">
-                          <Camera size={16} />
-                      </button>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 mb-2 md:mb-0">
-                      <h1 className="text-3xl font-bold text-gray-900 leading-tight">{user.name}</h1>
-                      <div className="flex items-center gap-4 text-gray-500 mt-1 text-sm">
-                          <span className="flex items-center gap-1.5"><Mail size={14} /> {user.email}</span>
-                          <span className="flex items-center gap-1.5"><Calendar size={14} /> Joined Jan 2024</span>
-                      </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 mb-2">
-                      <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
-                          Edit Profile
-                      </button>
-                      <button className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-lg">
-                          Upgrade Plan
-                      </button>
+          {/* Profile Header */}
+          <div className="flex flex-col md:flex-row items-start md:items-end -mt-12 mb-8 gap-6">
+              {/* Avatar */}
+              <div className="relative">
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-sm overflow-hidden">
+                      <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
                   </div>
               </div>
-          </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 pt-24 pb-20">
-          
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-8">
+              {/* User Info */}
+              <div className="flex-1 mb-2">
+                  <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">{user.name}</h1>
+                  <div className="flex items-center gap-4 text-zinc-500 mt-2 text-sm font-medium">
+                      <span className="flex items-center gap-1.5"><Mail size={14} /> {user.email}</span>
+                      <span className="flex items-center gap-1.5"><Calendar size={14} /> Member since Jan 2024</span>
+                  </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 mb-2 w-full md:w-auto">
+                  <button onClick={() => setActiveTab('settings')} className="flex-1 md:flex-none px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-full text-sm font-medium hover:bg-zinc-50 transition-colors">
+                      Edit Profile
+                  </button>
+              </div>
+          </div>
+
+          {/* Navigation Tabs - Simple text links */}
+          <div className="flex gap-8 border-b border-zinc-100 mb-8">
               <button 
                 onClick={() => setActiveTab('overview')}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                className={`pb-3 text-sm font-medium transition-all ${activeTab === 'overview' ? 'text-black border-b-2 border-black' : 'text-zinc-400 hover:text-zinc-600'}`}
               >
                   Overview
               </button>
               <button 
                 onClick={() => setActiveTab('settings')}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'settings' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                className={`pb-3 text-sm font-medium transition-all ${activeTab === 'settings' ? 'text-black border-b-2 border-black' : 'text-zinc-400 hover:text-zinc-600'}`}
               >
                   Settings
               </button>
           </div>
 
           {activeTab === 'overview' ? (
-              <div className="space-y-8 animate-fade-in-up">
+              <div className="space-y-12 animate-fade-in">
                   
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                          <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
-                              <Zap size={14} className="text-yellow-500" /> Total Creations
+                  {/* KPI Cards - Minimal */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                          <div className="text-zinc-400 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-2">
+                              <Zap size={12} /> Creations
                           </div>
-                          <div className="text-3xl font-bold text-gray-900">{totalGenerations}</div>
+                          <div className="text-2xl font-bold text-zinc-900">{totalGenerations}</div>
                       </div>
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                          <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
-                              <Layout size={14} className="text-blue-500" /> Prototypes
+                      <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                          <div className="text-zinc-400 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-2">
+                              <Layout size={12} /> Prototypes
                           </div>
-                          <div className="text-3xl font-bold text-gray-900">{prototypes}</div>
+                          <div className="text-2xl font-bold text-zinc-900">{prototypes}</div>
                       </div>
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                          <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
-                              <ImageIcon size={14} className="text-purple-500" /> Images
+                      <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                          <div className="text-zinc-400 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-2">
+                              <ImageIcon size={12} /> Images
                           </div>
-                          <div className="text-3xl font-bold text-gray-900">{images}</div>
+                          <div className="text-2xl font-bold text-zinc-900">{images}</div>
                       </div>
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                          <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
-                              <CreditCard size={14} className="text-green-500" /> Current Plan
+                      <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                          <div className="text-zinc-400 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-2">
+                              <CreditCard size={12} /> Plan
                           </div>
-                          <div className="text-3xl font-bold text-gray-900">Free</div>
+                          <div className="text-2xl font-bold text-zinc-900">Free</div>
                       </div>
                   </div>
 
-                  {/* Recent Activity */}
+                  {/* Recent Activity List */}
                   <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
-                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-lg font-bold text-zinc-900">Recent Activity</h3>
+                          <button onClick={() => onNavigate('gallery')} className="text-sm text-zinc-500 hover:text-black transition-colors flex items-center gap-1">
+                              View all <ChevronRight size={14} />
+                          </button>
+                      </div>
+                      
+                      <div className="space-y-1">
                           {items.length === 0 ? (
-                              <div className="p-8 text-center text-gray-500 text-sm">No activity yet. Start building!</div>
+                              <div className="p-8 text-center text-zinc-400 text-sm border border-dashed border-zinc-200 rounded-xl">
+                                  No activity yet. Start creating!
+                              </div>
                           ) : (
-                              items.slice(0, 5).map((item, i) => (
-                                  <div key={item.id} className="flex items-center gap-4 p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => onNavigate('gallery')}>
-                                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0 ${
-                                          item.type === 'image' ? 'bg-purple-500' :
-                                          item.type === 'prototype' ? 'bg-blue-500' :
-                                          item.type === 'dynamic' ? 'bg-indigo-600' : 'bg-gray-500'
+                              items.slice(0, 5).map((item) => (
+                                  <div key={item.id} className="group flex items-center gap-4 p-4 rounded-xl hover:bg-zinc-50 transition-colors cursor-pointer" onClick={() => onNavigate('gallery')}>
+                                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                                          item.type === 'image' ? 'bg-zinc-200 text-zinc-600' : 
+                                          'bg-black text-white'
                                       }`}>
                                           {item.type === 'image' ? <ImageIcon size={16} /> : <Layout size={16} />}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                          <h4 className="text-sm font-semibold text-gray-900 truncate">{item.title}</h4>
-                                          <p className="text-xs text-gray-500 truncate">{new Date(item.createdAt || Date.now()).toLocaleDateString()} • {item.type}</p>
+                                          <h4 className="text-sm font-medium text-zinc-900 truncate">{item.title}</h4>
+                                          <p className="text-xs text-zinc-500">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</p>
                                       </div>
-                                      <div className="text-gray-300">
-                                          <ChevronRight size={16} />
-                                      </div>
+                                      <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-500" />
                                   </div>
                               ))
                           )}
                       </div>
-                      <button onClick={() => onNavigate('gallery')} className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                          View all history <ChevronRight size={14} />
-                      </button>
                   </div>
 
               </div>
           ) : (
-              <div className="space-y-6 animate-fade-in-up max-w-3xl">
+              <div className="max-w-2xl space-y-8 animate-fade-in">
                   
-                  {/* Account Settings */}
-                  <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                          <Settings size={18} /> Account Settings
-                      </h3>
-                      <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                  <label className="text-xs font-bold text-gray-500 uppercase">Full Name</label>
-                                  <input type="text" value={user.name} disabled className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 cursor-not-allowed" />
-                              </div>
-                              <div className="space-y-1">
-                                  <label className="text-xs font-bold text-gray-500 uppercase">Email Address</label>
-                                  <input type="text" value={user.email} disabled className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 cursor-not-allowed" />
-                              </div>
+                  {/* Form Section */}
+                  <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Display Name</label>
+                              <input type="text" value={user.name} disabled className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-600 cursor-not-allowed" />
+                          </div>
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Email</label>
+                              <input type="text" value={user.email} disabled className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-600 cursor-not-allowed" />
                           </div>
                       </div>
-                  </section>
+                  </div>
 
-                  {/* Preferences */}
-                  <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                          <Bell size={18} /> Preferences
-                      </h3>
-                      <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                              <div>
-                                  <div className="text-sm font-medium text-gray-900">Email Notifications</div>
-                                  <div className="text-xs text-gray-500">Receive updates about new features.</div>
-                              </div>
-                              <div className="w-10 h-6 bg-black rounded-full relative cursor-pointer"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
-                          </div>
-                          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                              <div>
-                                  <div className="text-sm font-medium text-gray-900">Dark Mode</div>
-                                  <div className="text-xs text-gray-500">Switch between light and dark themes.</div>
-                              </div>
-                              <div className="w-10 h-6 bg-gray-200 rounded-full relative cursor-pointer"><div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div></div>
-                          </div>
-                      </div>
-                  </section>
+                  <hr className="border-zinc-100" />
 
-                  {/* Danger Zone */}
-                  <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
-                      <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
-                          <Shield size={18} /> Danger Zone
-                      </h3>
-                      <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600">Sign out of your account on this device.</div>
-                          <button onClick={onSignOut} className="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
-                              <LogOut size={16} /> Sign Out
-                          </button>
-                      </div>
-                  </section>
+                  {/* Actions */}
+                  <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-zinc-900">Account Actions</h3>
+                      <button onClick={onSignOut} className="w-full flex items-center justify-between p-4 rounded-xl border border-red-100 bg-red-50/50 text-red-600 hover:bg-red-50 transition-colors group">
+                          <div className="flex items-center gap-3">
+                              <LogOut size={18} />
+                              <span className="font-medium text-sm">Sign Out</span>
+                          </div>
+                          <ChevronRight size={16} className="opacity-50 group-hover:opacity-100" />
+                      </button>
+                  </div>
 
               </div>
           )}

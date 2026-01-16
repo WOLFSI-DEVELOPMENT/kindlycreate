@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Eye, GitFork, Check, Download, ChevronDown, Copy, Minimize2, Maximize2, Code, Terminal, Sparkles, Monitor, Smartphone, Share, RotateCcw, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Type, Palette } from 'lucide-react';
+import { Eye, GitFork, Check, Download, ChevronDown, Copy, Minimize2, Maximize2, Code, Terminal, Sparkles, Monitor, Smartphone, Share, RotateCcw, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Type, Palette, Globe, Loader2 } from 'lucide-react';
 import { PreviewAreaProps } from '../types';
 import { RadiantPreview } from './RadiantPreview';
 import { PricingSection } from './PricingSection';
@@ -8,6 +8,8 @@ import { JellyButton } from './JellyButton';
 import { CreepyButton } from './CreepyButton';
 import { MixpanelPricing } from './MixpanelPricing';
 import { ClickUpCalculator } from './ClickUpCalculator';
+import { auth, db } from '../firebase';
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- CUSTOM SVG ICONS FOR DROPDOWN ---
 const CopyIcon = () => <Copy size={16} />;
@@ -152,6 +154,8 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'prompt' | 'readme'>('preview');
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
 
   // Determine if we should show visual tabs (Preview/Code)
   // ONLY for Prototypes, Design Systems, and Dynamic items.
@@ -168,7 +172,8 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
         // Default to prompt if no visual component
         setActiveTab('prompt');
     }
-  }, [item.id, showVisualTabs]); // Reset when item ID changes
+    setPublished(false); // Reset published state when item changes
+  }, [item.id, showVisualTabs]); 
 
   const handleCopy = () => {
     let textToCopy = '';
@@ -215,6 +220,36 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handlePublish = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+          alert("You must be logged in to publish to the community.");
+          return;
+      }
+      if (!item.systemPrompt && !item.code) return;
+
+      setPublishing(true);
+      try {
+          await addDoc(collection(db, "community_prompts"), {
+              ...item,
+              authorId: user.uid,
+              authorName: user.displayName || 'Anonymous',
+              authorPhoto: user.photoURL,
+              publishedAt: Date.now(),
+              // Ensure we don't save undefined values which Firestore hates
+              id: item.id || `pub-${Date.now()}`,
+              views: 0,
+              copies: 0
+          });
+          setPublished(true);
+      } catch (e) {
+          console.error("Error publishing:", e);
+          alert("Failed to publish. Check console.");
+      } finally {
+          setPublishing(false);
+      }
   };
 
   const openUrl = (urlTemplate: string) => {
@@ -362,6 +397,23 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
                         >
                             <BlingIcon />
                         </button>
+                    )}
+
+                    {/* Publish Button */}
+                    {(item.systemPrompt || item.code) && !published && (
+                        <button
+                            onClick={handlePublish}
+                            disabled={publishing}
+                            className={`p-2 rounded-full transition-all ${publishing ? 'bg-gray-100 text-gray-400' : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'}`}
+                            title="Publish to Community"
+                        >
+                            {publishing ? <Loader2 size={16} className="animate-spin" /> : <Globe size={16} />}
+                        </button>
+                    )}
+                    {published && (
+                        <div className="p-2 text-green-500" title="Published">
+                            <Check size={16} />
+                        </div>
                     )}
 
                     {/* Copy Button */}
