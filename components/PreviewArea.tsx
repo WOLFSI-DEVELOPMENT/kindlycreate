@@ -8,6 +8,7 @@ import { JellyButton } from './JellyButton';
 import { CreepyButton } from './CreepyButton';
 import { MixpanelPricing } from './MixpanelPricing';
 import { ClickUpCalculator } from './ClickUpCalculator';
+import { EditorToolbar } from './EditorToolbar';
 import { auth, db } from '../firebase';
 import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -60,6 +61,9 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'prompt' | 'readme'>('preview');
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
   
+  // Iframe Ref for editing
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   // Publishing State
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -73,8 +77,9 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
 
   const exportRef = useRef<HTMLDivElement>(null);
 
-  const isPrototype = item.type === 'prototype' || item.type === 'dynamic';
-  const showVisualTabs = item.type === 'prototype' || item.category === 'Design System' || item.type === 'dynamic';
+  const isPrototype = item.type === 'prototype';
+  const isDynamic = item.type === 'dynamic';
+  const showVisualTabs = isPrototype || item.category === 'Design System' || isDynamic;
   const isLocked = item.isPaid; 
 
   useEffect(() => {
@@ -100,6 +105,17 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // --- Handlers ---
+
+  const handleEditorCommand = (command: string, value?: string) => {
+      if (iframeRef.current && iframeRef.current.contentDocument) {
+          const doc = iframeRef.current.contentDocument;
+          doc.execCommand(command, false, value);
+          // Optional: Force focus back to iframe if needed, though simple formatting usually doesn't require it
+          iframeRef.current.contentWindow?.focus();
+      }
+  };
 
   const handleCopyPrompt = (text: string) => {
     if (isLocked) { alert("This is a paid component."); return; }
@@ -128,12 +144,17 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
   const handleDownload = () => {
     if (isLocked) { alert("This is a paid component. Please purchase to download."); return; }
     let textToDownload = item.code || '';
+    if (iframeRef.current?.contentDocument?.body) {
+        // If editing happened, try to get the current HTML
+        textToDownload = `<!DOCTYPE html><html>${iframeRef.current.contentDocument.documentElement.innerHTML}</html>`;
+    }
+    
     if (!textToDownload) return;
-    const blob = new Blob([textToDownload], { type: 'text/plain' });
+    const blob = new Blob([textToDownload], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${item.id}.html`;
+    a.download = `${item.id || 'export'}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -186,9 +207,10 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
        return (
          <div className="relative w-full h-full">
              <iframe
+                ref={iframeRef}
                 title="Live Preview"
                 className={`w-full h-full border-none bg-white ${isLocked ? 'blur-sm pointer-events-none' : ''}`}
-                sandbox="allow-scripts allow-same-origin"
+                sandbox="allow-scripts allow-same-origin allow-forms"
                 srcDoc={srcDoc}
              />
              {isLocked && (
@@ -219,131 +241,137 @@ export const PreviewArea: React.FC<PreviewAreaPropsWithExtensions> = ({ item, on
     return <div className="p-10 text-center text-gray-400">Preview not available</div>;
   };
 
-  const hasViewControls = showVisualTabs;
-  const hasActions = true;
-
   return (
     <div className="flex-1 flex flex-col h-full bg-white md:bg-gray-50/50 overflow-hidden relative">
       
-      {/* Floating Toolbar */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center p-1.5 bg-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-200/60 backdrop-blur-xl transition-all hover:scale-[1.01]">
+      {/* Floating Toolbar Container */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 transition-all hover:scale-[1.01]">
           
-          {/* Ask Kindly Toggle */}
-          {onToggleAskKindly && (
-              <div className="flex items-center px-1">
-                <button
-                    onClick={onToggleAskKindly}
-                    className={`p-2 rounded-full transition-all duration-200 ${isAskKindlyActive ? 'bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
-                    title={isAskKindlyActive ? "Close Ask Kindly" : "Open Ask Kindly"}
-                >
-                    <Sparkles size={18} className={isAskKindlyActive ? "fill-indigo-600" : ""} />
-                </button>
-              </div>
-          )}
-
-          {/* Divider 1 */}
-          {onToggleAskKindly && (hasViewControls || hasActions) && (
-              <div className="w-px h-5 bg-gray-200 mx-1.5"></div>
-          )}
-
-          {/* View Modes */}
-          {hasViewControls && (
-              <>
-                {/* Device Toggles - Only show in Preview Tab */}
-                {activeTab === 'preview' && (
-                    <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-full mr-2">
-                        <button 
-                            onClick={() => setDeviceMode('desktop')}
-                            className={`p-1.5 rounded-full transition-all ${deviceMode === 'desktop' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Desktop View"
+          {/* === DYNAMIC & STUDIO TOOLBAR === */}
+          {isDynamic && activeTab === 'preview' ? (
+              <EditorToolbar 
+                  onCommand={handleEditorCommand} 
+                  type="dynamic" 
+                  onExport={handleDownload}
+              />
+          ) : (
+              /* === STANDARD TOOLBAR === */
+              <div className="flex items-center p-1.5 bg-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-200/60 backdrop-blur-xl">
+                  
+                  {/* Ask Kindly Toggle */}
+                  {onToggleAskKindly && (
+                      <div className="flex items-center px-1">
+                        <button
+                            onClick={onToggleAskKindly}
+                            className={`p-2 rounded-full transition-all duration-200 ${isAskKindlyActive ? 'bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
+                            title={isAskKindlyActive ? "Close Ask Kindly" : "Open Ask Kindly"}
                         >
-                            <Monitor size={14} />
+                            <Sparkles size={18} className={isAskKindlyActive ? "fill-indigo-600" : ""} />
                         </button>
-                        <button 
-                            onClick={() => setDeviceMode('mobile')}
-                            className={`p-1.5 rounded-full transition-all ${deviceMode === 'mobile' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Mobile View"
-                        >
-                            <Smartphone size={14} />
-                        </button>
-                    </div>
-                )}
+                      </div>
+                  )}
 
-                {/* Tab Switcher */}
-                <div className="flex items-center bg-gray-100/80 p-1 rounded-full">
-                     <button 
-                        onClick={() => setActiveTab('preview')} 
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'preview' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                     >
-                        <Eye size={14} /> Canvas
-                     </button>
-                     <button 
-                        onClick={() => setActiveTab('code')} 
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'code' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                     >
-                        <Code size={14} /> Code
-                     </button>
-                </div>
-              </>
-          )}
+                  {/* Divider */}
+                  <div className="w-px h-5 bg-gray-200 mx-1.5"></div>
 
-          {/* Divider 2 */}
-          {hasViewControls && hasActions && (
-              <div className="w-px h-5 bg-gray-200 mx-2"></div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-1 px-1 relative">
-                {/* Publish Button */}
-                {(item.systemPrompt || item.code) && !published && !isLocked && (
-                    <button
-                        onClick={handlePublishClick}
-                        className={`p-2 rounded-full transition-all text-gray-400 hover:bg-blue-50 hover:text-blue-600`}
-                        title="Publish to Community"
-                    >
-                        <Globe size={18} />
-                    </button>
-                )}
-                
-                {/* Dedicated Export Dropdown */}
-                <div className="relative" ref={exportRef}>
-                    <button 
-                        onClick={() => setExportOpen(!exportOpen)}
-                        className={`p-2 rounded-full transition-all ${exportOpen ? 'bg-gray-100 text-black' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-900'}`}
-                        title="Export"
-                    >
-                        <Share size={18} />
-                    </button>
-                    {exportOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in-up z-50">
-                            <div className="p-1">
-                                <button onClick={() => handleCopyPrompt(item.systemPrompt)} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
-                                    {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />} Copy Prompt
+                  {/* View Modes (Only for standard/prototype view) */}
+                  {showVisualTabs && (
+                      <>
+                        {/* Device Toggles */}
+                        {activeTab === 'preview' && (
+                            <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-full mr-2">
+                                <button 
+                                    onClick={() => setDeviceMode('desktop')}
+                                    className={`p-1.5 rounded-full transition-all ${deviceMode === 'desktop' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                                    title="Desktop View"
+                                >
+                                    <Monitor size={14} />
                                 </button>
-                                {item.code && (
-                                    <button onClick={() => handleCopyCode(item.code || '')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
-                                        {copiedCode ? <Check size={14} className="text-green-600" /> : <Code size={14} />} Copy Code
-                                    </button>
-                                )}
-                                <div className="h-px bg-gray-100 my-1"></div>
-                                <button onClick={() => handleExport('bolt')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
-                                    <BoltIcon /> Open in Bolt
-                                </button>
-                                <button onClick={() => handleExport('v0')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
-                                    <V0Icon /> Open in v0
-                                </button>
-                                <button onClick={() => handleExport('chatgpt')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
-                                    <ChatGPTIcon /> Open in ChatGPT
-                                </button>
-                                <div className="h-px bg-gray-100 my-1"></div>
-                                <button onClick={handleDownload} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
-                                    <Download size={14} /> Download HTML
+                                <button 
+                                    onClick={() => setDeviceMode('mobile')}
+                                    className={`p-1.5 rounded-full transition-all ${deviceMode === 'mobile' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                                    title="Mobile View"
+                                >
+                                    <Smartphone size={14} />
                                 </button>
                             </div>
+                        )}
+
+                        {/* Tab Switcher */}
+                        <div className="flex items-center bg-gray-100/80 p-1 rounded-full">
+                            <button 
+                                onClick={() => setActiveTab('preview')} 
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'preview' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <Eye size={14} /> Canvas
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('code')} 
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === 'code' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <Code size={14} /> Code
+                            </button>
                         </div>
-                    )}
-                </div>
-          </div>
+                      </>
+                  )}
+
+                  {/* Divider */}
+                  <div className="w-px h-5 bg-gray-200 mx-2"></div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 px-1 relative">
+                        {/* Publish Button */}
+                        {(item.systemPrompt || item.code) && !published && !isLocked && (
+                            <button
+                                onClick={handlePublishClick}
+                                className={`p-2 rounded-full transition-all text-gray-400 hover:bg-blue-50 hover:text-blue-600`}
+                                title="Publish to Community"
+                            >
+                                <Globe size={18} />
+                            </button>
+                        )}
+                        
+                        {/* Export Dropdown */}
+                        <div className="relative" ref={exportRef}>
+                            <button 
+                                onClick={() => setExportOpen(!exportOpen)}
+                                className={`p-2 rounded-full transition-all ${exportOpen ? 'bg-gray-100 text-black' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-900'}`}
+                                title="Export"
+                            >
+                                <Share size={18} />
+                            </button>
+                            {exportOpen && (
+                                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in-up z-50">
+                                    <div className="p-1">
+                                        <button onClick={() => handleCopyPrompt(item.systemPrompt)} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
+                                            {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />} Copy Prompt
+                                        </button>
+                                        {item.code && (
+                                            <button onClick={() => handleCopyCode(item.code || '')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
+                                                {copiedCode ? <Check size={14} className="text-green-600" /> : <Code size={14} />} Copy Code
+                                            </button>
+                                        )}
+                                        <div className="h-px bg-gray-100 my-1"></div>
+                                        <button onClick={() => handleExport('bolt')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
+                                            <BoltIcon /> Open in Bolt
+                                        </button>
+                                        <button onClick={() => handleExport('v0')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
+                                            <V0Icon /> Open in v0
+                                        </button>
+                                        <button onClick={() => handleExport('chatgpt')} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
+                                            <ChatGPTIcon /> Open in ChatGPT
+                                        </button>
+                                        <div className="h-px bg-gray-100 my-1"></div>
+                                        <button onClick={handleDownload} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2 transition-colors">
+                                            <Download size={14} /> Download HTML
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                  </div>
+              </div>
+          )}
       </div>
 
       {/* Content */}

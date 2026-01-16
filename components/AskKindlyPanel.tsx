@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { ArrowUp, X, Sparkles, Plus, Menu, Mic, User, ExternalLink, CheckCircle2, Paperclip, Loader2 } from 'lucide-react';
+import { ArrowUp, X, Sparkles, Plus, Menu, Mic, User, ExternalLink, CheckCircle2, Paperclip, Loader2, Database, Globe, Key, ShieldCheck, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { InteractiveAvatar } from './InteractiveAvatar';
 import { useDeepgram } from '../hooks/useDeepgram';
 import { COMPONENT_ITEMS } from '../constants';
@@ -22,9 +22,9 @@ interface AskKindlyPanelProps {
 interface Message {
   role: 'user' | 'model';
   text: string;
-  type?: 'text' | 'search_result' | 'export_options' | 'design_modification';
+  type?: 'text' | 'search_result' | 'export_options' | 'design_modification' | 'integration_added';
   payload?: any;
-  image?: string; // For user uploaded images in chat history
+  image?: string; 
 }
 
 // Helper for dynamic API key
@@ -34,23 +34,59 @@ const getAI = () => {
 };
 
 const PEXELS_API_KEY = "8Mh8jDK5VAgGnnmNYO2k0LqdaLL8lbIR4ou5Vnd8Zod0cETWahEx1MKf";
-const YOUTUBE_API_KEY = "AIzaSyA8BjLi4xJdYNTjBhT4BA0p5HSTcLdultw";
 
 // --- Helper Functions ---
 
 // 1. Standard Code Generation (Editor Mode)
-const generateCanvasCode = async (userPrompt: string) => {
-    // ... existing implementation ...
-    const systemPrompt = `ACT AS: Senior Frontend Developer.
-    TASK: Write code for a functional UI prototype.
+const generateCanvasCode = async (userPrompt: string, activeIntegrations: string[], config: any) => {
+    
+    let integrationContext = "";
+    
+    if (activeIntegrations.includes('supabase')) {
+        integrationContext += `
+        - INCLUDE SUPABASE: Add <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        - Initialize Client: 
+          const supabase = supabase.createClient('${config.supabase?.url || 'YOUR_SUPABASE_URL'}', '${config.supabase?.key || 'YOUR_SUPABASE_KEY'}');
+        - Context: Assume a table exists relevant to the user's request (e.g., 'todos', 'users').
+        - Implement basic CRUD if implied by prompt.
+        `;
+    }
+    
+    if (activeIntegrations.includes('firebase')) {
+        integrationContext += `
+        - INCLUDE FIREBASE: Add standard Firebase SDK scripts (v9 modular syntax via CDN).
+        - Configuration:
+          const firebaseConfig = { 
+            apiKey: "${config.firebase?.apiKey || 'YOUR_API_KEY'}",
+            projectId: "${config.firebase?.projectId || 'YOUR_PROJECT_ID'}"
+          };
+        - Initialize App and Auth/Firestore as needed.
+        `;
+    }
+
+    if (activeIntegrations.includes('api')) {
+        integrationContext += `
+        - API FETCHING: The user wants to fetch data from '${config.api?.endpoint || 'https://api.example.com/data'}'.
+        - Use standard fetch() with async/await.
+        - Handle loading states (show spinner) and error states (show message).
+        - Mock the response structure based on the prompt context if the endpoint is generic.
+        `;
+    }
+
+    const systemPrompt = `ACT AS: Senior Frontend Developer & Solutions Architect.
+    TASK: Write code for a functional UI prototype with PRO INTEGRATIONS.
     CONTEXT: The user wants a single-file HTML output using Tailwind CSS.
     USER PROMPT: ${userPrompt}
+    
+    INTEGRATION REQUIREMENTS:
+    ${integrationContext}
     
     INSTRUCTIONS:
     1. Generate a COMPLETE, WORKING HTML file.
     2. Use Tailwind CSS via CDN.
     3. Use Vanilla JavaScript for interactivity.
     4. The code must be self-contained in a single file.
+    5. If integrations are requested, implement REAL connection logic using the provided placeholders.
     
     OUTPUT FORMAT:
     Return ONLY raw JSON (no markdown) with this structure:
@@ -78,7 +114,6 @@ const generateCanvasCode = async (userPrompt: string) => {
 const generateStudioContent = async (userPrompt: string) => {
     // ... existing implementation with external APIs ...
     const images: string[] = [];
-    let videoId: string | null = null;
 
     try {
         const pexelsRes = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(userPrompt)}&per_page=6&orientation=landscape`, {
@@ -147,11 +182,11 @@ const generateStudioContent = async (userPrompt: string) => {
 };
 
 const getInitialSuggestions = (item?: ComponentItem) => {
-    if (!item) return ["Search library", "Build dashboard", "Create presentation slides"];
+    if (!item) return ["Connect Supabase", "Add custom API", "Build admin dashboard"];
     if (item.category === 'Design System') {
         return ["Change primary color", "Dark mode", "Thicker borders"];
     }
-    return ["Make responsive", "Add animation", "Change colors"];
+    return ["Make responsive", "Add animation", "Connect to API"];
 };
 
 // --- Helper Components ---
@@ -197,6 +232,19 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // Base64
+  
+  // Integration State
+  const [activeIntegrations, setActiveIntegrations] = useState<string[]>([]);
+  const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
+  const [expandedIntegration, setExpandedIntegration] = useState<string | null>(null);
+  
+  // Configs
+  const [integrationConfig, setIntegrationConfig] = useState({
+      supabase: { url: '', key: '' },
+      firebase: { apiKey: '', projectId: '' },
+      api: { endpoint: '' }
+  });
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -225,6 +273,15 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
               setSelectedImage(reader.result as string);
           };
           reader.readAsDataURL(file);
+      }
+  };
+
+  const toggleIntegration = (id: string) => {
+      setActiveIntegrations(prev => 
+          prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      );
+      if (!activeIntegrations.includes(id)) {
+          setExpandedIntegration(id);
       }
   };
 
@@ -298,13 +355,14 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
       USER PREFERENCES (Memory): ${preferences}
       CURRENT ITEM: ${activeItem?.title || "None"} (${activeItem?.category || "General"})
       CURRENT PROMPT: "${activeItem?.systemPrompt || ""}"
+      ACTIVE INTEGRATIONS: ${activeIntegrations.join(', ')}
       ${isDesignSystem ? `CURRENT HTML CODE: \`\`\`html\n${activeItem?.code}\n\`\`\`` : ''}
       
       USER REQUEST: "${textToSend}"
       ${userMsg.image ? "[User uploaded an image for visual context]" : ""}
       `;
 
-      const systemInstruction = `You are Kindly 3.0, an advanced AI architect with Vision capabilities.
+      const systemInstruction = `You are Kindly Pro 3.0, an advanced AI architect with Vision and Full Stack capabilities.
       
       Identify the user's intent and return a JSON object with the "type".
       
@@ -320,8 +378,11 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
       
       4. MODIFY_DESIGN: (Design System Mode) User wants to visually change the current design system HTML.
          Return: { "type": "modify", "code": "FULL HTML code", "explanation": "Changes made" }
+      
+      5. ADD_INTEGRATION: User wants to add an API or DB (Supabase, Firebase, Custom API).
+         Return: { "type": "add_integration", "tool": "supabase" | "api" | "firebase", "text": "Added integration." }
          
-      5. CHAT: General chat/questions.
+      6. CHAT: General chat/questions.
          Return: { "type": "text", "text": "Response..." }
 
       MANDATORY: Include "suggestions": ["Action 1", "Action 2", "Action 3"] (Max 2 words).
@@ -361,7 +422,9 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
           setMessages(prev => [...prev, newMsg]);
       } else if (data.type === 'canvas') {
           setMessages(prev => [...prev, { role: 'model', text: `Generating ${isStudioMode ? 'visual' : 'canvas'} for "${data.title}"...` }]);
-          const generator = isStudioMode ? generateStudioContent : generateCanvasCode;
+          
+          // Pass the config to generator
+          const generator = isStudioMode ? generateStudioContent : (prompt: string) => generateCanvasCode(prompt, activeIntegrations, integrationConfig);
           const generatedCode = await generator(data.prompt);
           
           if (generatedCode && onGenerateCanvas) {
@@ -380,6 +443,13 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
           newMsg.text = data.explanation || "Updated design system.";
           onUpdateItem({ code: data.code });
           setMessages(prev => [...prev, newMsg]);
+      } else if (data.type === 'add_integration') {
+          const tool = data.tool || 'api';
+          toggleIntegration(tool);
+          newMsg.type = 'integration_added';
+          newMsg.text = `Added ${tool} integration to context.`;
+          setMessages(prev => [...prev, newMsg]);
+          setIsIntegrationsOpen(true); // Auto open panel to let them config
       } else {
           setMessages(prev => [...prev, newMsg]);
       }
@@ -414,6 +484,7 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
               </button>
               <div className="flex items-center gap-2">
                   <span className="text-base font-medium text-gray-700 tracking-tight">Ask Kindly</span>
+                  <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider">PRO</span>
                   {activeItem?.category === 'Design System' && (
                       <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md font-bold">Design Mode</span>
                   )}
@@ -431,10 +502,15 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 text-blue-500 rounded-3xl flex items-center justify-center mb-6">
                       <InteractiveAvatar className="w-12 h-12" />
                   </div>
-                  <h3 className="text-gray-900 font-medium mb-1">Ask Kindly</h3>
-                  <p className="text-sm text-gray-500">
-                      {isStudioMode ? "I can create presentations, slides, and docs for you." : "I can search the library, build canvases, or modify designs."}
+                  <h3 className="text-gray-900 font-medium mb-1">Ask Kindly Pro</h3>
+                  <p className="text-sm text-gray-500 max-w-[240px]">
+                      {isStudioMode ? "I can create presentations, slides, and docs for you." : "I can build full-stack prototypes, connect APIs, and manage integrations."}
                   </p>
+                  <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                      <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-md text-gray-500 flex items-center gap-1"><Database size={10}/> Supabase</span>
+                      <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-md text-gray-500 flex items-center gap-1"><Flame size={10}/> Firebase</span>
+                      <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-md text-gray-500 flex items-center gap-1"><Globe size={10}/> Custom API</span>
+                  </div>
               </div>
           )}
 
@@ -475,6 +551,13 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
                           <ExportOptions prompt={msg.payload.prompt} />
                       )}
 
+                      {msg.type === 'integration_added' && (
+                          <div className="flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-100">
+                              <Database size={14} />
+                              <span className="font-medium">Integration Active</span>
+                          </div>
+                      )}
+
                       {msg.type === 'design_modification' && (
                           <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-100">
                               <CheckCircle2 size={14} />
@@ -501,8 +584,116 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
       {/* Input Area */}
       <div className="p-4 bg-white relative">
           
+          {/* Integrations Panel */}
+          {isIntegrationsOpen && (
+              <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-30 animate-fade-in-up max-h-[400px] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Integrations</h4>
+                      <button onClick={() => setIsIntegrationsOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={14}/></button>
+                  </div>
+                  <div className="space-y-2">
+                      
+                      {/* SUPABASE */}
+                      <div className={`border rounded-xl overflow-hidden transition-all ${activeIntegrations.includes('supabase') ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+                          <button 
+                            onClick={() => toggleIntegration('supabase')}
+                            className="w-full flex items-center gap-3 p-3 text-sm"
+                          >
+                              <Database size={16} className={activeIntegrations.includes('supabase') ? "text-green-600" : "text-gray-400"} />
+                              <div className="flex-1 text-left">
+                                  <div className="font-bold text-gray-800">Supabase</div>
+                                  <div className="text-xs opacity-60">Database & Auth</div>
+                              </div>
+                              {activeIntegrations.includes('supabase') ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                          </button>
+                          
+                          {activeIntegrations.includes('supabase') && expandedIntegration === 'supabase' && (
+                              <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                  <input 
+                                    type="text" 
+                                    placeholder="Project URL"
+                                    value={integrationConfig.supabase.url}
+                                    onChange={(e) => setIntegrationConfig(prev => ({...prev, supabase: {...prev.supabase, url: e.target.value}}))}
+                                    className="w-full bg-white border border-green-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-green-400 placeholder-green-800/30"
+                                  />
+                                  <input 
+                                    type="password" 
+                                    placeholder="Anon Key"
+                                    value={integrationConfig.supabase.key}
+                                    onChange={(e) => setIntegrationConfig(prev => ({...prev, supabase: {...prev.supabase, key: e.target.value}}))}
+                                    className="w-full bg-white border border-green-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-green-400 placeholder-green-800/30"
+                                  />
+                              </div>
+                          )}
+                      </div>
+
+                      {/* FIREBASE */}
+                      <div className={`border rounded-xl overflow-hidden transition-all ${activeIntegrations.includes('firebase') ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'}`}>
+                          <button 
+                            onClick={() => toggleIntegration('firebase')}
+                            className="w-full flex items-center gap-3 p-3 text-sm"
+                          >
+                              <Flame size={16} className={activeIntegrations.includes('firebase') ? "text-orange-600" : "text-gray-400"} />
+                              <div className="flex-1 text-left">
+                                  <div className="font-bold text-gray-800">Firebase</div>
+                                  <div className="text-xs opacity-60">NoSQL & Auth</div>
+                              </div>
+                              {activeIntegrations.includes('firebase') ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                          </button>
+                          
+                          {activeIntegrations.includes('firebase') && expandedIntegration === 'firebase' && (
+                              <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                  <input 
+                                    type="text" 
+                                    placeholder="API Key"
+                                    value={integrationConfig.firebase.apiKey}
+                                    onChange={(e) => setIntegrationConfig(prev => ({...prev, firebase: {...prev.firebase, apiKey: e.target.value}}))}
+                                    className="w-full bg-white border border-orange-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-orange-400 placeholder-orange-800/30"
+                                  />
+                                  <input 
+                                    type="text" 
+                                    placeholder="Project ID"
+                                    value={integrationConfig.firebase.projectId}
+                                    onChange={(e) => setIntegrationConfig(prev => ({...prev, firebase: {...prev.firebase, projectId: e.target.value}}))}
+                                    className="w-full bg-white border border-orange-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-orange-400 placeholder-orange-800/30"
+                                  />
+                              </div>
+                          )}
+                      </div>
+
+                      {/* CUSTOM API */}
+                      <div className={`border rounded-xl overflow-hidden transition-all ${activeIntegrations.includes('api') ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
+                          <button 
+                            onClick={() => toggleIntegration('api')}
+                            className="w-full flex items-center gap-3 p-3 text-sm"
+                          >
+                              <Globe size={16} className={activeIntegrations.includes('api') ? "text-blue-600" : "text-gray-400"} />
+                              <div className="flex-1 text-left">
+                                  <div className="font-bold text-gray-800">REST API</div>
+                                  <div className="text-xs opacity-60">Custom Endpoints</div>
+                              </div>
+                              {activeIntegrations.includes('api') ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                          </button>
+                          
+                          {activeIntegrations.includes('api') && expandedIntegration === 'api' && (
+                              <div className="px-3 pb-3 space-y-2 animate-fade-in">
+                                  <input 
+                                    type="text" 
+                                    placeholder="API Endpoint (https://...)"
+                                    value={integrationConfig.api.endpoint}
+                                    onChange={(e) => setIntegrationConfig(prev => ({...prev, api: {...prev.api, endpoint: e.target.value}}))}
+                                    className="w-full bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-blue-400 placeholder-blue-800/30"
+                                  />
+                              </div>
+                          )}
+                      </div>
+
+                  </div>
+              </div>
+          )}
+
           {/* AI Suggestions */}
-          {suggestions.length > 0 && !isGenerating && (
+          {suggestions.length > 0 && !isGenerating && !isIntegrationsOpen && (
               <div className="absolute bottom-full left-0 w-full px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar z-10 pointer-events-none">
                   <div className="flex gap-2 pointer-events-auto">
                       {suggestions.map((suggestion, idx) => (
@@ -531,13 +722,20 @@ export const AskKindlyPanel: React.FC<AskKindlyPanelProps> = ({ activeItem, onUp
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={activeItem?.category === 'Design System' ? "Modify style or add components..." : (isStudioMode ? "Describe your slide deck, doc, or layout..." : "Ask to search, build, or refine...")}
+                  placeholder={activeItem?.category === 'Design System' ? "Modify style or add components..." : (isStudioMode ? "Describe your slide deck, doc, or layout..." : "Ask to build, integrate, or refine...")}
                   className="flex-1 w-full bg-transparent border-none outline-none text-base text-gray-800 placeholder-gray-400 font-light resize-none p-1 min-h-[60px]"
                   rows={2}
               />
 
               <div className="flex justify-between items-center mt-2">
                   <div className="flex gap-2">
+                      <button 
+                        onClick={() => setIsIntegrationsOpen(!isIntegrationsOpen)}
+                        className={`p-2 transition-colors rounded-lg ${activeIntegrations.length > 0 ? 'bg-black text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                        title="Integrations"
+                      >
+                          <Database size={18} strokeWidth={2} />
+                      </button>
                       <button 
                         onClick={() => fileInputRef.current?.click()}
                         className="p-2 text-gray-400 hover:text-gray-600 transition-colors" 
