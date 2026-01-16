@@ -92,6 +92,7 @@ const App: React.FC = () => {
   const [initialPrompt, setInitialPrompt] = useState('');
   const [creationMode, setCreationMode] = useState<'prompt' | 'prototype' | 'image' | 'dynamic'>('prompt');
   const [generatedItem, setGeneratedItem] = useState<ComponentItem | null>(null);
+  const [selectedLibraryItem, setSelectedLibraryItem] = useState<ComponentItem | null>(null); // New state for dynamic library selections
   const [isGenerating, setIsGenerating] = useState(false);
   const generationRef = useRef(0);
   const [studioItem, setStudioItem] = useState<ComponentItem | null>(null);
@@ -371,7 +372,7 @@ const App: React.FC = () => {
   // ... (Keep existing Generation Handlers: handleCanvasGeneration, handleStudioGeneration, handleInitialSubmit, etc.) ...
   const activeItem = (currentView === 'editor' && generatedItem) 
     ? (customizedItem || generatedItem) 
-    : (customizedItem || (currentView === 'design-systems'
+    : (customizedItem || selectedLibraryItem || (currentView === 'design-systems'
       ? (DESIGN_SYSTEMS.find(item => item.id === selectedId) || DESIGN_SYSTEMS[0])
       : (COMPONENT_ITEMS.find(item => item.id === selectedId) || COMPONENT_ITEMS[0])));
 
@@ -491,23 +492,42 @@ const App: React.FC = () => {
              return;
         }
     }
+    
     setIsGenerating(true);
     navigateTo('building');
     
     try {
         const conversationText = chatHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
-        let prompt = `ACT AS: Senior Frontend Developer... CONTEXT: Single-file HTML prototype using Tailwind CSS... USER HISTORY: ${conversationText} ... OUTPUT JSON { "code": ... }`;
-        const rawText = await generateMagicPrompt(prompt);
+        let promptText = "";
+        
+        if (creationMode === 'prompt') {
+            promptText = `ACT AS: Expert Prompt Engineer.
+            TASK: Create a high-fidelity system prompt for an AI coding assistant (like Cursor/Bolt) based on the user's request.
+            CONTEXT: The user wants to build a specific UI component or app.
+            USER HISTORY: ${conversationText}
+            OUTPUT FORMAT: JSON { "systemPrompt": "...", "title": "...", "description": "..." }`;
+        } else {
+            promptText = `ACT AS: Senior Frontend Developer.
+            TASK: Write code for a functional UI prototype.
+            CONTEXT: The user wants a single-file HTML prototype using Tailwind CSS.
+            USER HISTORY: ${conversationText}
+            OUTPUT FORMAT: JSON { "code": "...", "title": "...", "description": "..." }`;
+        }
+
+        const rawText = await generateMagicPrompt(promptText);
+        
         if (genId !== generationRef.current) return;
+        
         let cleanText = rawText || "";
         cleanText = cleanText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
         if (cleanText) {
             try {
                 const data = JSON.parse(cleanText);
                 const newItem: ComponentItem = {
                     id: `generated-${Date.now()}`,
-                    title: data.title || "New Prototype",
-                    description: data.description || "Generated Component",
+                    title: data.title || "New Creation",
+                    description: data.description || "Generated Content",
                     views: 1, copies: 0, category: 'UI Component', thumbnailClass: 'bg-indigo-50',
                     systemPrompt: data.systemPrompt || "Prototype Mode",
                     readme: data.readme,
@@ -515,6 +535,12 @@ const App: React.FC = () => {
                     createdAt: Date.now(),
                     type: creationMode
                 };
+                
+                // If it's a prompt mode, ensure we have the system prompt set correctly and code is optional/empty if not provided
+                if (creationMode === 'prompt' && data.systemPrompt) {
+                    newItem.systemPrompt = data.systemPrompt;
+                }
+
                 setGeneratedItem(newItem);
                 setGalleryItems(prev => [newItem, ...prev]);
                 await new Promise(resolve => setTimeout(resolve, 1500));
@@ -540,6 +566,7 @@ const App: React.FC = () => {
           return;
       }
       navigateTo(view as ViewState);
+      setSelectedLibraryItem(null); // Clear selected item when changing views
       if (view === 'design-systems') setSelectedId('ds-classic');
       else if (view === 'library') setSelectedId('radiant-input');
   };
@@ -552,6 +579,16 @@ const App: React.FC = () => {
       setCreationMode('prompt');
     }
     navigateTo('editor');
+  };
+
+  const handleProfileItemClick = (item: ComponentItem) => {
+      setGeneratedItem(item);
+      if (item.type === 'prototype' || item.type === 'image' || item.type === 'dynamic') {
+          setCreationMode(item.type);
+      } else {
+          setCreationMode('prompt');
+      }
+      navigateTo('editor');
   };
 
   // ... (Keep MobileNav) ...
@@ -827,7 +864,7 @@ const App: React.FC = () => {
 
              {/* PROFILE */}
              {currentView === 'profile' && user && (
-                 <ProfileView user={user} items={galleryItems} onNavigate={navigateTo} onSignOut={handleSignOut} />
+                 <ProfileView user={user} items={galleryItems} onSelectItem={handleGallerySelection} onNavigate={navigateTo} onSignOut={handleSignOut} />
              )}
 
              {/* PUBLIC PROFILE */}
@@ -835,6 +872,7 @@ const App: React.FC = () => {
                  <ProfileView 
                     user={publicProfileUser} 
                     items={publicProfileItems} 
+                    onSelectItem={handleProfileItemClick}
                     onNavigate={() => {}} 
                     viewMode="public"
                  />
@@ -849,7 +887,12 @@ const App: React.FC = () => {
                           <Sidebar 
                             items={COMPONENT_ITEMS} 
                             selectedId={selectedId} 
-                            onSelect={(id) => { setSelectedId(id); setCustomizedItem(null); if (isMobile) navigateTo('editor'); }} 
+                            onSelect={(item) => { 
+                                setSelectedId(item.id); 
+                                setSelectedLibraryItem(item); 
+                                setCustomizedItem(null); 
+                                if (isMobile) navigateTo('editor'); 
+                            }} 
                             onNavigateToProfile={handleNavigateToPublicProfile}
                           />
                       )}
@@ -866,7 +909,11 @@ const App: React.FC = () => {
                       {isAskKindlyActive ? (
                             <AskKindlyPanel activeItem={activeItem} onUpdateItem={handleItemUpdate} onClose={() => setIsAskKindlyActive(false)} onGenerateCanvas={handleCanvasGeneration} user={user} requireAuth={requireAuth} />
                       ) : (
-                          <Sidebar items={DESIGN_SYSTEMS} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); setCustomizedItem(null); if (isMobile) navigateTo('editor'); }} />
+                          <Sidebar items={DESIGN_SYSTEMS} selectedId={selectedId} onSelect={(item) => { 
+                              setSelectedId(item.id); 
+                              setCustomizedItem(null); 
+                              if (isMobile) navigateTo('editor'); 
+                          }} />
                       )}
                    </div>
                    <div className="hidden md:block flex-1 h-full">

@@ -37,10 +37,19 @@ export interface User {
 export interface SidebarProps {
   items: ComponentItem[];
   selectedId: string;
-  onSelect: (id: string) => void;
+  onSelect: (item: ComponentItem) => void;
   onNavigateToProfile?: (authorId: string, authorName: string) => void;
 }
 
 export interface PreviewAreaProps {
   item: ComponentItem;
+}
+
+export interface ProfileViewProps {
+  user: User;
+  items: ComponentItem[];
+  onSelectItem: (item: ComponentItem) => void;
+  onNavigate: (view: any) => void;
+  onSignOut?: () => void;
+  viewMode?: 'owner' | 'public';
 }

@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ items, selectedId, onSelect, o
             return (
                 <div
                 key={item.id}
-                onClick={() => onSelect(item.id)}
+                onClick={() => onSelect(item)}
                 className={`group flex items-start gap-4 p-3 squircle cursor-pointer transition-all duration-200 ${
                     isSelected
                     ? 'bg-gray-50 shadow-sm'

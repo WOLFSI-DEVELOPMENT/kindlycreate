@@ -5,16 +5,9 @@ import {
   Mail, Calendar, Zap, Layout, Image as ImageIcon, 
   CreditCard, ChevronRight, LogOut, Globe, DollarSign
 } from 'lucide-react';
+import { ProfileViewProps } from '../types';
 
-interface ProfileViewProps {
-  user: User;
-  items: ComponentItem[];
-  onNavigate: (view: any) => void;
-  onSignOut?: () => void;
-  viewMode?: 'owner' | 'public';
-}
-
-export const ProfileView: React.FC<ProfileViewProps> = ({ user, items, onNavigate, onSignOut, viewMode = 'owner' }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ user, items, onSelectItem, onNavigate, onSignOut, viewMode = 'owner' }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
 
   // Derived stats
@@ -132,7 +125,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, items, onNavigat
                               </div>
                           ) : (
                               items.map((item) => (
-                                  <div key={item.id} className="group flex items-center gap-4 p-4 rounded-xl border border-transparent hover:border-zinc-200 hover:bg-zinc-50 transition-colors cursor-pointer" onClick={() => onNavigate('gallery')}>
+                                  <div key={item.id} className="group flex items-center gap-4 p-4 rounded-xl border border-transparent hover:border-zinc-200 hover:bg-zinc-50 transition-colors cursor-pointer" onClick={() => onSelectItem(item)}>
                                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
                                           item.type === 'image' ? 'bg-zinc-200 text-zinc-600' : 
                                           'bg-black text-white'
