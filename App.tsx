@@ -13,6 +13,7 @@ import { TermsView } from './components/TermsView';
 import { DocsView } from './components/DocsView';
 import { SettingsView } from './components/SettingsView';
 import { AskKindlyPanel } from './components/AskKindlyPanel';
+import { ProfileView } from './components/ProfileView';
 import { COMPONENT_ITEMS, DESIGN_SYSTEMS } from './constants';
 import { ComponentItem, User } from './types';
 import { LogOut, Settings, User as UserIcon, Book, Fingerprint, X, CheckCircle2, Sparkles, Home, Menu, LayoutGrid, Plus, Mail, Phone, ArrowLeft, Loader2 } from 'lucide-react';
@@ -56,7 +57,7 @@ const DesignSystemIcon = () => (
   </svg>
 );
 
-type ViewState = 'home' | 'planning' | 'building' | 'dynamic-building' | 'editor' | 'library' | 'design-systems' | 'gallery' | 'privacy' | 'terms' | 'docs' | 'settings' | 'ask-kindly';
+type ViewState = 'home' | 'planning' | 'building' | 'dynamic-building' | 'editor' | 'library' | 'design-systems' | 'gallery' | 'privacy' | 'terms' | 'docs' | 'settings' | 'ask-kindly' | 'profile';
 
 // --- GOOGLE GENAI CONFIG ---
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -160,6 +161,7 @@ const App: React.FC = () => {
     else if (path === '/terms') setCurrentView('terms');
     else if (path === '/gallery') setCurrentView('gallery');
     else if (path === '/ask-kindly') setCurrentView('ask-kindly');
+    else if (path === '/profile') setCurrentView('profile');
     else setCurrentView('home');
 
     const onPopState = () => {
@@ -172,6 +174,7 @@ const App: React.FC = () => {
         else if (p === '/terms') setCurrentView('terms');
         else if (p === '/gallery') setCurrentView('gallery');
         else if (p === '/ask-kindly') setCurrentView('ask-kindly');
+        else if (p === '/profile') setCurrentView('profile');
         else setCurrentView('home');
     };
     window.addEventListener('popstate', onPopState);
@@ -615,7 +618,7 @@ const App: React.FC = () => {
                                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Signed in as</div>
                                      <div className="text-sm font-bold text-gray-900 truncate">{user.email}</div>
                                  </div>
-                                 <button className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3 transition-colors"><UserIcon size={16} /> Profile</button>
+                                 <button onClick={() => { setShowUserMenu(false); navigateTo('profile'); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3 transition-colors"><UserIcon size={16} /> Profile</button>
                                  <button onClick={() => { setShowUserMenu(false); navigateTo('settings'); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3 transition-colors"><Settings size={16} /> Settings</button>
                                  <button onClick={() => { setShowUserMenu(false); navigateTo('docs'); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-3 transition-colors"><Book size={16} /> Documentation</button>
                                  <div className="h-px bg-gray-50 my-1"></div>
@@ -841,6 +844,11 @@ const App: React.FC = () => {
                         )}
                     </div>
                  </div>
+             )}
+
+             {/* PROFILE */}
+             {currentView === 'profile' && user && (
+                 <ProfileView user={user} items={galleryItems} onNavigate={navigateTo} onSignOut={handleSignOut} />
              )}
 
              {currentView === 'library' && (
